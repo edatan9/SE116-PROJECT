@@ -17,24 +17,28 @@ interface interFSM {
     Set<String> getStates();
     String getCurrentState();
     Set<String> getNextState();
-    Map<Pair>
+    Map<Pair<String, String>, String> transitions;
 }
 
 class FSM implements interFSM {
+    private Set<String> states = new HashSet<>();
+    private Set<String> symbols = new HashSet<>();
     public boolean addState(String state) {
         if (state == null || state.isBlank()) {
             return false;
         }
         state=state.toUpperCase();
-        else if (!state.matches()) {
+       if (!state.matches("[A-Z0-9]+")) { 
+        return false;
+    }
 
-        }
+         return states.add(state);
     }
 
     public boolean addSymbol(String symbol) {
         if(symbol==null || symbol.isBlank()) {
             return false;
-        } else if(symbol.matches("[a-zA-Z0-9]")) {
+        } else if(symbol.matches("^[a-zA-Z0-9]+$")) {
             return false;
         }
       symbols.add(symbol);
