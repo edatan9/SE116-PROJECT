@@ -40,3 +40,27 @@ class FSM implements interFSM {
         return true;
     }
 }
+//Transition class
+public class Transition {
+    private String currentState;
+    private char inputSymbol;
+    private String nextState;
+
+    public Transition(String currentState, char inputSymbol, String nextState) {
+        this.currentState = currentState;
+        this.inputSymbol = inputSymbol;
+        this.nextState = nextState;
+    }
+
+    public String getCurrentState() {
+        return currentState;
+    }
+
+    public char getInputSymbol() {
+        return inputSymbol;
+    }
+
+    public String getNextState() {
+        return nextState;
+    }
+}
