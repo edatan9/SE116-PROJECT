@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
 
+
 interface interFSM {
     boolean addSymbol(String symbol);
     boolean addState(String state);
@@ -23,6 +24,10 @@ interface interFSM {
 class FSM implements interFSM {
     private Set<String> states = new HashSet<>();
     private Set<String> symbols = new HashSet<>();
+    private String currentState;
+    private Set<String> finalStates = new HashSet<>();
+    
+    
     public boolean addState(String state) {
         if (state == null || state.isBlank()) {
             return false;
@@ -44,6 +49,18 @@ class FSM implements interFSM {
       symbols.add(symbol);
         return true;
     }
+}
+@Override
+public boolean setCurrentState(String state) {
+    if (!states.contains(state)) return false;
+    currentState = state.toUpperCase();
+    return true;
+}
+
+@Override
+public boolean addNextState(String state) {
+    if (!states.contains(state)) return false;
+    return finalStates.add(state.toUpperCase());
 }
 //Transition class
 public class Transition {
