@@ -85,6 +85,18 @@ public class Transition {
     public String getNextState() {
         return nextState;
     }
+
+    public void setCurrentState(String currentState) {
+        this.currentState=currentState;
+    }
+
+    public void setInputSymbol(char intputSymbol) {
+        this.inputSymbol=inputSymbol;
+    }
+
+    public void setNextState(String nextState) {
+        this.nextState=nextState;
+    }
 }
 class State {
     private final String name;
