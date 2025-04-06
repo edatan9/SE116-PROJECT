@@ -26,6 +26,44 @@ class FSM implements interFSM {
     private Set<String> symbols = new HashSet<>();
     private String currentState;
     private Set<String> finalStates = new HashSet<>();
+
+    public boolean resetFSM() {
+        if (initialState == null) return false;
+        currentState = initialState;
+        return true;
+    }
+
+    public boolean stepFSM(String inputSymbol) {
+        Pair<String, String> key = new Pair<>(currentState, inputSymbol);
+        if (!transitions.containsKey(key)) return false;
+        currentState = transitions.get(key);
+        return true;
+    }
+
+    public ArrayList<String> traceFSM(String inputLine) {
+        ArrayList<String> visitedStates = new ArrayList<>();
+        resetFSM();
+        visitedStates.add(currentState);
+        for (char c : inputLine.toCharArray()) {
+            String sym = String.valueOf(c);
+            if (!stepFSM(sym)) {
+                break;
+            }
+            visitedStates.add(currentState);
+        }
+        return visitedStates;
+    }
+
+    public boolean saveFSM(String filename) {
+   
+        return true;
+    }
+
+    public boolean loadFSM(String filename) {
+       
+        return true;
+    }
+}
     
     
     public boolean addState(String state) {
