@@ -107,9 +107,9 @@ public class Transition {
     private String nextState;
 
     public Transition(String currentState, char inputSymbol, String nextState) {
-        this.currentState = currentState;
+        this.currentState = currentState.toUpperCase();
         this.inputSymbol = inputSymbol;
-        this.nextState = nextState;
+        this.nextState = nextState.toUpperCase();
     }
 
     public String getCurrentState() {
@@ -122,6 +122,26 @@ public class Transition {
 
     public String getNextState() {
         return nextState;
+    }
+
+    @Override
+    public String toString() {
+        return "(" + currentState + ", " + inputSymbol + ") → " + nextState;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Transition)) return false;
+        Transition t = (Transition) o;
+        return inputSymbol == t.inputSymbol &&
+               currentState.equalsIgnoreCase(t.currentState) &&
+               nextState.equalsIgnoreCase(t.nextState);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(currentState.toLowerCase(), inputSymbol, nextState.toLowerCase());
     }
 }
 class State {
