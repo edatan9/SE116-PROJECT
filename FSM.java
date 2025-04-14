@@ -101,7 +101,24 @@ class FSM implements interFSM {
     finalStates.clear();
     initialState = null;
     currentState = null;
+   }
+    
+    @Override
+    public boolean addTransition(String symbol, String fromState, String toState) {
+       symbol = symbol.toUpperCase();
+       fromState = fromState.toUpperCase();
+       toState = toState.toUpperCase();
+
+    if (!symbols.contains(symbol) || !states.contains(fromState) || !states.contains(toState)) {
+        return false;
+    }
+
+    Pair<String, String> key = new Pair<>(fromState, symbol);
+        
+    transitions.put(key, toState);
+    return true;
 }
+
 
 }
     
