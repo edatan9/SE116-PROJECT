@@ -92,6 +92,17 @@ class FSM implements interFSM {
        
         return true;
     }
+
+    @Override
+    public void clear() {
+    symbols.clear();
+    states.clear();
+    transitions.clear();
+    finalStates.clear();
+    initialState = null;
+    currentState = null;
+}
+
 }
     
     
