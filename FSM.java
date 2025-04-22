@@ -20,31 +20,39 @@ interface interFSM {
     Map<Pair<String, String>, String> transitions;
 }
 
-class Pair<K, V> {
-    private final K key;
-    private final V value;
 
-    public Pair(K key, V value) {
-        this.key = key;
-        this.value = value;
+
+ class Pair<F, S> {
+    private final F first;
+    private final S second;
+
+    public Pair(F first, S second) {
+        this.first = first;
+        this.second = second;
     }
 
-    public K getKey() { return key; }
-    public V getValue() { return value; }
+    public F getFirst() {
+        return first;
+    }
+
+    public S getSecond() {
+        return second;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Pair)) return false;
         Pair<?, ?> pair = (Pair<?, ?>) o;
-        return Objects.equals(key, pair.key) && Objects.equals(value, pair.value);
+        return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, value);
+        return Objects.hash(first, second);
     }
 }
+
 
 
 class FSM implements interFSM {
