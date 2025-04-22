@@ -270,44 +270,5 @@ public class FSMCommandHandler {
         public TransitionException(String msg) { super(msg); }
     }
 }
-class FSMTest {
-    public static void main(String[] args) {
-        FSM fsm = new FSM();
 
-        // SYMBOLS: 0, 1, 2, 3
-        fsm.addSymbol("0");
-        fsm.addSymbol("1");
-        fsm.addSymbol("2");
-        fsm.addSymbol("3");
-
-        // STATES: Q0, Q1, Q2
-        fsm.addState("Q0");
-        fsm.addState("Q1");
-        fsm.addState("Q2");
-
-        // INITIAL STATE: Q0
-        fsm.setCurrentState("Q0");
-
-        // FINAL STATE: Q2
-        fsm.addNextState("Q2");
-
-        // TRANSITIONS
-        fsm.addTransition("0", "Q0", "Q0");
-        fsm.addTransition("0", "Q1", "Q1");
-        fsm.addTransition("0", "Q2", "Q2");
-        fsm.addTransition("1", "Q0", "Q1");
-        fsm.addTransition("1", "Q1", "Q2");
-        fsm.addTransition("1", "Q2", "Q0");
-        fsm.addTransition("2", "Q0", "Q2");
-        fsm.addTransition("2", "Q1", "Q0");
-        fsm.addTransition("2", "Q2", "Q1");
-        fsm.addTransition("3", "Q0", "Q0");
-        fsm.addTransition("3", "Q1", "Q1");
-        fsm.addTransition("3", "Q2", "Q2");
-
-        // EXECUTE
-        System.out.println("Trace FSM for input '123':");
-        System.out.println(fsm.traceFSM("123"));
-    }
-}
 
