@@ -3,7 +3,6 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
 
-
 interface interFSM {
     boolean addSymbol(String symbol);
     boolean addState(String state);
@@ -271,3 +270,12 @@ class FSMTest {
         System.out.println(fsm.traceFSM("123"));
     }
 }
+public class FSMCommandHandler {
+
+    private FSM fsm;
+
+    public FSMCommandHandler(FSM fsm) {
+        this.fsm = fsm;
+    }
+}
+
