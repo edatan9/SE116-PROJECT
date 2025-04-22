@@ -23,8 +23,6 @@ import java.util.HashSet;
     Map<Pair<String, String>, String> getTransitions();
 }
 
-
-
  class Pair<F, S> {
     private final F first;
     private final S second;
@@ -58,7 +56,7 @@ import java.util.HashSet;
 
 
 
-class FSM implements interFSM {
+class FSM implements InterFSM {
     private Set<String> states = new HashSet<>();
     private Set<String> symbols = new HashSet<>();
     private String initialState;
