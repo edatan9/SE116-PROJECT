@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.Map;
 import java.io.*;
 
-
 interface interFSM {
     boolean addSymbol(String symbol);
     boolean addState(String state);
@@ -24,31 +23,39 @@ interface interFSM {
     Map<Pair<String, String>, String> transitions;
 }
 
-class Pair<K, V> {
-    private final K key;
-    private final V value;
 
-    public Pair(K key, V value) {
-        this.key = key;
-        this.value = value;
+
+ class Pair<F, S> {
+    private final F first;
+    private final S second;
+
+    public Pair(F first, S second) {
+        this.first = first;
+        this.second = second;
     }
 
-    public K getKey() { return key; }
-    public V getValue() { return value; }
+    public F getFirst() {
+        return first;
+    }
+
+    public S getSecond() {
+        return second;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Pair)) return false;
         Pair<?, ?> pair = (Pair<?, ?>) o;
-        return Objects.equals(key, pair.key) && Objects.equals(value, pair.value);
+        return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, value);
+        return Objects.hash(first, second);
     }
 }
+
 
 
 class FSM implements interFSM {
@@ -326,44 +333,6 @@ public class FileManager {
         return commands;
     }
 }
-public class FSM {
-    public static void main(String[] args) {
-        FSM fsm = new FSM();
 
-        // SYMBOLS: 0, 1, 2, 3
-        fsm.addSymbol("0");
-        fsm.addSymbol("1");
-        fsm.addSymbol("2");
-        fsm.addSymbol("3");
 
-        // STATES: Q0, Q1, Q2
-        fsm.addState("Q0");
-        fsm.addState("Q1");
-        fsm.addState("Q2");
-
-        // INITIAL STATE: Q0
-        fsm.setCurrentState("Q0");
-
-        // FINAL STATE: Q2
-        fsm.addNextState("Q2");
-
-        // TRANSITIONS
-        fsm.addTransition("0", "Q0", "Q0");
-        fsm.addTransition("0", "Q1", "Q1");
-        fsm.addTransition("0", "Q2", "Q2");
-        fsm.addTransition("1", "Q0", "Q1");
-        fsm.addTransition("1", "Q1", "Q2");
-        fsm.addTransition("1", "Q2", "Q0");
-        fsm.addTransition("2", "Q0", "Q2");
-        fsm.addTransition("2", "Q1", "Q0");
-        fsm.addTransition("2", "Q2", "Q1");
-        fsm.addTransition("3", "Q0", "Q0");
-        fsm.addTransition("3", "Q1", "Q1");
-        fsm.addTransition("3", "Q2", "Q2");
-
-        // EXECUTE
-        System.out.println("Trace FSM for input '123':");
-        System.out.println(fsm.traceFSM("123"));
-    }
-}
 
