@@ -238,6 +238,35 @@ class State {
         return name;
     }
 }
+public class FSMCommandHandler {
+
+    private FSM fsm;
+
+    public FSMCommandHandler(FSM fsm) {
+        this.fsm = fsm;
+    }
+
+    //setters and getters
+    public FSM getFSM() {
+        return fsm;
+    }
+
+    public void setFSM(FSM fsm) {
+        this.fsm = fsm;
+    }
+    // custom exceptions
+    public static class InvalidSymbolException extends Exception {
+        public InvalidSymbolException(String msg) { super(msg); }
+    }
+
+    public static class InvalidStateException extends Exception {
+        public InvalidStateException(String msg) { super(msg); }
+    }
+
+    public static class TransitionException extends Exception {
+        public TransitionException(String msg) { super(msg); }
+    }
+}
 class FSMTest {
     public static void main(String[] args) {
         FSM fsm = new FSM();
@@ -276,14 +305,6 @@ class FSMTest {
         // EXECUTE
         System.out.println("Trace FSM for input '123':");
         System.out.println(fsm.traceFSM("123"));
-    }
-}
-public class FSMCommandHandler {
-
-    private FSM fsm;
-
-    public FSMCommandHandler(FSM fsm) {
-        this.fsm = fsm;
     }
 }
 
