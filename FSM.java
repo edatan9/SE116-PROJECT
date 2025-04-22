@@ -23,8 +23,6 @@ import java.util.HashSet;
     Map<Pair<String, String>, String> getTransitions();
 }
 
-
-
  class Pair<F, S> {
     private final F first;
     private final S second;
@@ -57,150 +55,118 @@ import java.util.HashSet;
 }
 
 
- class FSM implements InterFSM {
-    private Set<String> symbols;
-    private Set<String> states;
-    private Set<String> finalStates;
+
+class FSM implements InterFSM {
+    private Set<String> states = new HashSet<>();
+    private Set<String> symbols = new HashSet<>();
     private String initialState;
     private String currentState;
-    private Map<Pair<String, String>, String> transitions;
+    private Set<String> finalStates = new HashSet<>();
+    private Map<Pair<String, String>, String> transitions = new HashMap<>();
 
-    public FSM() {
-        symbols = new HashSet<>();
-        states = new LinkedHashSet<>();  // Sıralı tutması için
-        finalStates = new HashSet<>();
-        transitions = new HashMap<>();
-        initialState = null;
-        currentState = null;
+    public boolean resetFSM() {
+        if (initialState == null) return false;
+        currentState = initialState;
+        return true;
     }
 
-    @Override
-    public boolean addSymbol(String symbol) {
-        if (symbol == null || !symbol.matches("[a-zA-Z0-9]")) {
-            System.out.println("Invalid symbol: " + symbol);
-            return false;
+    public boolean stepFSM(String inputSymbol) {
+        Pair<String, String> key = new Pair<>(currentState, inputSymbol);
+        if (!transitions.containsKey(key)) return false;
+        currentState = transitions.get(key);
+        return true;
+    }
+
+    public ArrayList<String> traceFSM(String inputLine) {
+        ArrayList<String> visitedStates = new ArrayList<>();
+        resetFSM();
+        visitedStates.add(currentState);
+        for (char c : inputLine.toCharArray()) {
+            String sym = String.valueOf(c);
+            if (!stepFSM(sym)) {
+                break;
+            }
+            visitedStates.add(currentState);
         }
-        symbol = symbol.toUpperCase();
-        if (!symbols.add(symbol)) {
-            System.out.println("Warning: symbol " + symbol + " already declared.");
-            return false;
-        }
+        return visitedStates;
+    }
+
+    public boolean saveFSM(String filename) {
+   
+        return true;
+    }
+
+    public boolean loadFSM(String filename) {
+       
         return true;
     }
 
     @Override
+    public void clear() {
+    symbols.clear();
+    states.clear();
+    transitions.clear();
+    finalStates.clear();
+    initialState = null;
+    currentState = null;
+   }
+    
+    @Override
+    public boolean addTransition(String symbol, String fromState, String toState) {
+       symbol = symbol.toUpperCase();
+       fromState = fromState.toUpperCase();
+       toState = toState.toUpperCase();
+
+    if (!symbols.contains(symbol) || !states.contains(fromState) || !states.contains(toState)) {
+        return false;
+    }
+
+    Pair<String, String> key = new Pair<>(fromState, symbol);
+        
+    transitions.put(key, toState);
+    return true;
+}
+
+
+}
+    
+    
     public boolean addState(String state) {
-        if (state == null || !state.matches("[a-zA-Z0-9]+")) {
-            System.out.println("Invalid state: " + state);
+        if (state == null || state.isBlank()) {
             return false;
         }
-        state = state.toUpperCase();
-        boolean added = states.add(state);
-        if (!added) {
-            System.out.println("Warning: state " + state + " already declared.");
-        } else if (initialState == null) {
-            initialState = state;
-            currentState = state;
-        }
-        return added;
+        state=state.toUpperCase();
+       if (!state.matches("[A-Z0-9]+")) { 
+        return false;
     }
 
-    @Override
-    public boolean setInitialState(String state) {
-        state = state.toUpperCase();
-        if (!states.contains(state)) {
-            System.out.println("Warning: " + state + " was not previously declared as a state.");
-            states.add(state);  // Otomatik ekle
-        }
-        initialState = state;
-        currentState = state;
-        return true;
+         return states.add(state);
     }
 
-    @Override
-    public boolean addFinalState(String state) {
-        state = state.toUpperCase();
-        if (!states.contains(state)) {
-            System.out.println("Warning: " + state + " was not previously declared as a state.");
-            states.add(state);
-        }
-        if (!finalStates.add(state)) {
-            System.out.println("Warning: " + state + " was already a final state.");
+    public boolean addSymbol(String symbol) {
+        if(symbol==null || symbol.isBlank()) {
+            return false;
+        } else if(symbol.matches("^[a-zA-Z0-9]+$")) {
             return false;
         }
+      symbols.add(symbol);
         return true;
     }
+}
 @Override
- public boolean addTransition(String symbol, String fromState, String toState) {
-     symbol = symbol.toUpperCase();
-     fromState = fromState.toUpperCase();
-     toState = toState.toUpperCase();
+public boolean setCurrentState(String state) {
+    if (!states.contains(state)) return false;
+    currentState = state.toUpperCase();
+    return true;
+}
 
-     if (!symbols.contains(symbol)) {
-         System.out.println("Error: invalid symbol " + symbol);
-         return false;
-     }
-
-     if (!states.contains(fromState)) {
-         System.out.println("Error: invalid state " + fromState);
-         return false;
-     }
-
-     if (!states.contains(toState)) {
-         System.out.println("Error: invalid state " + toState);
-         return false;
-     }
-
-     Pair<String, String> key = new Pair<>(symbol, fromState);
-     if (transitions.containsKey(key)) {
-         System.out.println("Warning: transition already exists for <" + symbol + "," + fromState + ">. It will be overridden.");
-     }
-
-     transitions.put(key, toState);
-     return true;
- }
-
-     @Override
-     public String getCurrentState() {
-         return "";
-     }
-
-     @Override
-     public List<String> execute(String input) {
-         return List.of();
-     }
-
-     @Override
-     public void clear() {
-
-     }
-
-     @Override
-     public Set<String> getSymbols() {
-         return Set.of();
-     }
-
-     @Override
-     public Set<String> getStates() {
-         return Set.of();
-     }
-
-     @Override
-     public Set<String> getFinalStates() {
-         return Set.of();
-     }
-
-     @Override
-     public Map<Pair<String, String>, String> getTransitions() {
-         return Map.of();
-     }
- }
-
-
-
-
- //Transition class
- class Transition {
+@Override
+public boolean addNextState(String state) {
+    if (!states.contains(state)) return false;
+    return finalStates.add(state.toUpperCase());
+}
+//Transition class
+public class Transition {
     private String currentState;
     private char inputSymbol;
     private String nextState;
@@ -273,7 +239,7 @@ class State {
         return name;
     }
 }
- class FSMCommandHandler {
+public class FSMCommandHandler {
 
     private FSM fsm;
 
