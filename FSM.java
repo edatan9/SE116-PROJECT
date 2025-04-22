@@ -5,25 +5,26 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
 import java.io.*;
+import java.util.List;
+import java.util.HashSet;
 
-interface interFSM {
+ interface InterFSM {
     boolean addSymbol(String symbol);
     boolean addState(String state);
-    boolean setCurrentState(String state);
-    boolean addNextState(String state);
+    boolean setInitialState(String state);
+
+    boolean addFinalState(String state);
     boolean addTransition(String symbol, String fromState, String toState);
 
-    ArrayList<String> execute(String input);
+    String getCurrentState();
+    List<String> execute(String input);
     void clear();
 
     Set<String> getSymbols();
     Set<String> getStates();
-    String getCurrentState();
-    Set<String> getNextState();
-    Map<Pair<String, String>, String> transitions;
+    Set<String> getFinalStates();
+    Map<Pair<String, String>, String> getTransitions();
 }
-
-
 
  class Pair<F, S> {
     private final F first;
@@ -58,7 +59,7 @@ interface interFSM {
 
 
 
-class FSM implements interFSM {
+class FSM implements InterFSM {
     private Set<String> states = new HashSet<>();
     private Set<String> symbols = new HashSet<>();
     private String initialState;
@@ -331,6 +332,10 @@ public class FileManager {
         }
 
         return commands;
+    }
+}
+    public static class TransitionException extends Exception {
+        public TransitionException(String msg) { super(msg); }
     }
 }
 
