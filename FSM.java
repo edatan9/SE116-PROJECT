@@ -1,7 +1,10 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
+import java.io.*;
 
 
 interface interFSM {
@@ -231,7 +234,99 @@ class State {
         return name;
     }
 }
-class FSMTest {
+
+public class FileManager {
+    public void writeToTextFile(FSM fsm, String fileName) throws {
+        try(BufferedWriter bw=new BufferedWriter(new FileWriter(fileName))) {
+            bw.write("SYMBOLS");
+            for(String symbol : fsm.getSymbols()) {
+                bw.write(" " + symbol);
+            }
+
+            bw.write(";\n");
+
+            bw.write("STATES");
+            for(String state : fsm.getStates()) {
+                bw.write(" " + state);
+            }
+
+            bw.write(";\n");
+
+            bw.write("INITIAL-STATE" + fsm.getInitialState() + ";\n");
+
+            bw.write("FINAL-STATES");
+            for(String finalState : fsm.getFinalStates()) {
+                bw.write(" " + finalState);
+            }
+
+            bw.write("TRANSITIONS");
+            for (Transition transition : fsm.getTransitions()){
+                bw.write(" " + transition.getSymbol()) + " " + transition.getCurrentState() + " " + transition.getNextState() + ", ");
+            }
+
+            bw.write(";\n");
+        } catch(IOException e) {
+            System.err.println("There is something gone wrong when writing the file: " + e.getMessage());
+        }
+    }
+
+    public List<String> readCommandsFromFile(String filename) throws FileOperationException {
+        List<String> commands = new ArrayList<>();
+        StringBuilder currentCommand = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            int lineNumber = 0;
+
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+
+                // Skip empty lines
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
+                // Handle comment lines
+                if (line.trim().startsWith(";")) {
+                    continue;
+                }
+
+                // Process the line character by character
+                for (int i = 0; i < line.length(); i++) {
+                    char c = line.charAt(i);
+
+                    if (c == ';') {
+                        // End of command
+                        currentCommand.append(';');
+                        commands.add(currentCommand.toString().trim());
+                        currentCommand = new StringBuilder();
+
+                        // Skip the rest of the line (comments)
+                        break;
+                    } else {
+                        currentCommand.append(c);
+                    }
+                }
+
+                // If no semicolon was found, add a space to continue to next line
+                if (currentCommand.length() > 0 && !line.contains(";")) {
+                    currentCommand.append(" ");
+                }
+            }
+
+            // Check if there's a command without semicolon at the end of file
+            if (currentCommand.length() > 0) {
+                throw new FileOperationException("Command at the end of file missing semicolon: " + currentCommand);
+            }
+
+        } catch (IOException e) {
+            throw new FileOperationException("Error reading file " + filename + ": " + e.getMessage());
+        }
+
+        return commands;
+    }
+}
+public class FSM {
     public static void main(String[] args) {
         FSM fsm = new FSM();
 
@@ -271,3 +366,4 @@ class FSMTest {
         System.out.println(fsm.traceFSM("123"));
     }
 }
+
