@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
 import java.util.List;
+import java.util.HashSet;
 
  interface InterFSM {
     boolean addSymbol(String symbol);
