@@ -338,14 +338,14 @@ class FSMCommandHandler {
     }
 
     public void handleInitialStateCommand(String state) throws InvalidStateException {
-        if (!fsm.setCurrentState(state)) {
+        if (!fsm.setInitialState(state)) {
             throw new InvalidStateException("Initial state must be a declared state: " + state);
         }
     }
 
     public void handleFinalStatesCommand(String[] states) throws InvalidStateException {
         for (String state : states) {
-            if (!fsm.addNextState(state)) {
+            if (!fsm.addFinalState(state)) {
                 throw new InvalidStateException("Final state must be a declared state: " + state);
             }
         }
