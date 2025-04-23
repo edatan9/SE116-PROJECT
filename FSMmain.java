@@ -241,7 +241,7 @@ interface InterFSM {
      }
      @Override
      public boolean addNextState(String state) {
-         return addFinalState(state); // aynı işlevi görsün
+         return addFinalState(state); 
      }
      @Override
      public List<String> traceFSM(String input) {
