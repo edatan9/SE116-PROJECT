@@ -57,7 +57,7 @@ interface InterFSM {
     }
 }
 
- abstract class FSM implements InterFSM {
+ class FSM implements InterFSM {
     private Set<String> symbols;
     private Set<String> states;
     private Set<String> finalStates;
@@ -229,6 +229,25 @@ interface InterFSM {
          initialState = null;
          currentState = null;
      }
+     @Override
+     public boolean setCurrentState(String state) {
+         state = state.toUpperCase();
+         if (!states.contains(state)) {
+             System.out.println("Error: state " + state + " was not declared.");
+             return false;
+         }
+         currentState = state;
+         return true;
+     }
+     @Override
+     public boolean addNextState(String state) {
+         return addFinalState(state); // aynı işlevi görsün
+     }
+     @Override
+     public List<String> traceFSM(String input) {
+         return execute(input);
+     }
+
 
  }
 
