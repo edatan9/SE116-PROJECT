@@ -224,11 +224,6 @@ interface InterFSM {
 
  }
 
-
-
-
-
-
 //Transition class
  class Transition {
     private String currentState;
@@ -303,6 +298,7 @@ class State {
         return name;
     }
 }
+//FSMCommandHandler class
 class FSMCommandHandler {
 
     private FSM fsm;
@@ -319,6 +315,79 @@ class FSMCommandHandler {
     public void setFSM(FSM fsm) {
         this.fsm = fsm;
     }
+
+    public void handleSymbolsCommand(String[] tokens) throws InvalidSymbolException {
+        for (String symbol : tokens) {
+            if (!symbol.matches("[a-zA-Z0-9]")) {
+                throw new InvalidSymbolException("Invalid symbol: " + symbol);
+            }
+            fsm.addSymbol(symbol.toUpperCase());
+        }
+    }
+
+    public void handleStatesCommand(String[] tokens) throws InvalidStateException {
+        for (String state : tokens) {
+            if (!state.matches("[a-zA-Z0-9]+")) {
+                throw new InvalidStateException("Invalid state: " + state);
+            }
+            fsm.addState(state.toUpperCase());
+        }
+    }
+
+    public void handleInitialStateCommand(String state) throws InvalidStateException {
+        if (!fsm.setCurrentState(state)) {
+            throw new InvalidStateException("Initial state must be a declared state: " + state);
+        }
+    }
+
+    public void handleFinalStatesCommand(String[] states) throws InvalidStateException {
+        for (String state : states) {
+            if (!fsm.addNextState(state)) {
+                throw new InvalidStateException("Final state must be a declared state: " + state);
+            }
+        }
+    }
+
+    public void handleTransitionsCommand(String[] transitionStrings) throws TransitionException {
+        for (String transition : transitionStrings) {
+            String[] parts = transition.trim().split("\\s+");
+            if (parts.length != 3) {
+                throw new TransitionException("Invalid transition format: " + transition);
+            }
+
+            String symbol = parts[0];
+            String from = parts[1];
+            String to = parts[2];
+
+            if (!fsm.addTransition(symbol, from, to)) {
+                throw new TransitionException("Transition invalid: " + transition);
+            }
+        }
+    }
+
+    public void handlePrintCommand(String filename) {
+        System.out.println("SYMBOLS: " + fsm.getSymbols());
+        System.out.println("STATES: " + fsm.getStates());
+        System.out.println("INITIAL STATE: " + fsm.getCurrentState());
+        System.out.println("FINAL STATES: " + fsm.getNextState());
+        // İleride: Transitions map'ini yazdırmak için FSM'e getter eklersin
+    }
+
+    public String executeFSM(String input) {
+        ArrayList<String> trace = fsm.traceFSM(input);
+        StringBuilder result = new StringBuilder();
+        for (String state : trace) {
+            result.append(state).append(" ");
+        }
+        String finalState = trace.get(trace.size() - 1);
+        result.append(fsm.getNextState().contains(finalState) ? "YES" : "NO");
+        return result.toString();
+    }
+
+    public boolean isAcceptedState(String state) {
+        return fsm.getNextState().contains(state.toUpperCase());
+    }
+
     // custom exceptions
     public static class InvalidSymbolException extends Exception {
         public InvalidSymbolException(String msg) { super(msg); }
