@@ -11,13 +11,14 @@ interface InterFSM {
     boolean addSymbol(String symbol);
     boolean addState(String state);
     boolean setInitialState(String state);
-
+    boolean setCurrentState(String state);
     boolean addFinalState(String state);
     boolean addTransition(String symbol, String fromState, String toState);
-
+    boolean addNextState(String state);
     String getCurrentState();
     List<String> execute(String input);
     void clear();
+    List<String> traceFSM(String input);
 
     Set<String> getSymbols();
     Set<String> getStates();
@@ -56,7 +57,7 @@ interface InterFSM {
     }
 }
 
- class FSM implements InterFSM {
+ abstract class FSM implements InterFSM {
     private Set<String> symbols;
     private Set<String> states;
     private Set<String> finalStates;
@@ -308,20 +309,15 @@ class State {
 //FSMCommandHandler class
 class FSMCommandHandler {
 
-    private FSM fsm;
+    private InterFSM fsm;
 
     public FSMCommandHandler(FSM fsm) {
         this.fsm = fsm;
     }
 
     //setters and getters
-    public FSM getFSM() {
-        return fsm;
-    }
-
-    public void setFSM(FSM fsm) {
-        this.fsm = fsm;
-    }
+    public InterFSM getFSM() { return fsm; }
+    public void setFSM(InterFSM fsm) { this.fsm = fsm; }
 
     public void handleSymbolsCommand(String[] tokens) throws InvalidSymbolException {
         for (String symbol : tokens) {
@@ -376,23 +372,23 @@ class FSMCommandHandler {
         System.out.println("SYMBOLS: " + fsm.getSymbols());
         System.out.println("STATES: " + fsm.getStates());
         System.out.println("INITIAL STATE: " + fsm.getCurrentState());
-        System.out.println("FINAL STATES: " + fsm.getNextState());
+        System.out.println("FINAL STATES: " + fsm.getFinalStates());
         // İleride: Transitions map'ini yazdırmak için FSM'e getter eklersin
     }
 
     public String executeFSM(String input) {
-        ArrayList<String> trace = fsm.traceFSM(input);
+        ArrayList<String> trace = (ArrayList<String>) fsm.traceFSM(input);
         StringBuilder result = new StringBuilder();
         for (String state : trace) {
             result.append(state).append(" ");
         }
         String finalState = trace.get(trace.size() - 1);
-        result.append(fsm.getNextState().contains(finalState) ? "YES" : "NO");
+        result.append(fsm.getFinalStates().contains(finalState) ? "YES" : "NO");
         return result.toString();
     }
 
     public boolean isAcceptedState(String state) {
-        return fsm.getNextState().contains(state.toUpperCase());
+        return fsm.getFinalStates().contains(state.toUpperCase());
     }
 
     // custom exceptions
