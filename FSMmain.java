@@ -535,6 +535,68 @@ class FileManager {
     }
 }
 
+    class Logger {
+            private static BufferedWriter logWriter = null;
+            private static String currentLogFile = null;
+
+            public static String startLogging(String filename) {
+                try {
+                    // If already logging, close current log file
+                    if (logWriter != null) {
+                        stopLogging();
+                    }
+
+                    // Create new log file or overwrite existing one
+                    logWriter = new BufferedWriter(new FileWriter(filename));
+                    currentLogFile = filename;
+                    return "Started logging to " + filename;
+                } catch (IOException e) {
+                    return "Error: Could not start logging to " + filename + " - " + e.getMessage();
+                }
+            }
+
+            public static String stopLogging() {
+                if (logWriter != null) {
+                    try {
+                        logWriter.close();
+                        logWriter = null;
+                        currentLogFile = null;
+                        return "STOPPED LOGGING";
+                    } catch (IOException e) {
+                        return "Error while closing log file: " + e.getMessage();
+                    }
+                } else {
+                    return "LOGGING was not enabled";
+                }
+            }
+
+            public static String log(String command, String response) {
+                if (logWriter == null) {
+                    return null; // Not logging, no error
+                }
+
+                try {
+                    logWriter.write("> " + command);
+                    logWriter.newLine();
+                    logWriter.write(response);
+                    logWriter.newLine();
+                    logWriter.flush(); // Ensure content is written immediately
+                    return null;
+                } catch (IOException e) {
+                    return "Error writing to log file: " + e.getMessage();
+                }
+            }
+
+            public static boolean isLoggingEnabled() {
+                return logWriter != null;
+            }
+
+            public static String getCurrentLogFile() {
+                return currentLogFile;
+            }
+        }
+
+
     class Serializer implements Serializable {
         public void serializeFSM(FSM fsm, String filename) throws FileOperationException {
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
