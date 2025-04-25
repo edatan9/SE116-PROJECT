@@ -335,8 +335,13 @@ class FSMCommandHandler {
     }
 
     //setters and getters
-    public InterFSM getFSM() { return fsm; }
-    public void setFSM(InterFSM fsm) { this.fsm = fsm; }
+    public InterFSM getFSM() {
+        return fsm;
+    }
+
+    public void setFSM(InterFSM fsm) {
+        this.fsm = fsm;
+    }
 
     public void handleSymbolsCommand(String[] tokens) throws InvalidSymbolException {
         for (String symbol : tokens) {
@@ -422,9 +427,64 @@ class FSMCommandHandler {
     public static class TransitionException extends Exception {
         public TransitionException(String msg) { super(msg); }
     }
+
+class FileManager {
+    private FSM fsm; //fsm sinifina ulasmak icin fsm reference'i tutuyoruz
+
+    public FileManager(FSM fsm) {
+        this.fsm=fsm;
+    }
+
+    public FSM getFsm() {
+        return fsm;
+    }
+
+    public void setFsm(FSM fsm) {
+        this.fsm = fsm;
+    }
+
+    public void writeToFile(String filename) throws FileOperationException {
+        try(BufferedWriter writer =new BufferedWriter(new FileWriter(filename))) {
+            writer.write("SYMBOLS: ");
+            for(String symbol: fsm.getSymbols()) {
+                writer.write(" " + symbol);
+            }
+            writer.write(";");
+            writer.newLine();
+
+            writer.write("STATES: ");
+            for(String state: fsm.getStates()) {
+                writer.write(" " + state);
+            }
+            writer.write(";");
+            writer.newLine();
+
+             writer.write("INITIAL STATE: " + fsm.getCurrentState() + ";");
+             writer.newLine();
+
+            writer.write("FINAL-STATES: ");
+            for(String finalState: fsm.getFinalStates()) {
+                writer.write(" " + finalState);
+            }
+            writer.write(";");
+            writer.newLine();
+
+            writer.write("TRANSITIONS: ");
+            for (Map.Entry<Pair<String, String>, String> entry : fsm.getTransitions().entrySet()) {
+                Pair<String, String> key = entry.getKey();
+                String symbol = key.getFirst();
+                String fromState = key.getSecond();
+                String toState = entry.getValue();
+
+                writer.write("TRANSITIONS " + symbol + " " + fromState + " " + toState + ";");
+                writer.newLine();
+            }
+
+        }catch(IOException e) {
+            throw new FileOperationException("Error with writing the file: " + e.getMessage());
+        }
+    }
 }
-
-
 
 class Serializer implements Serializable{
     public void serializeFSM(FSM fsm, String filename) throws FileOperationException {
@@ -549,7 +609,7 @@ class Serializer implements Serializable{
 
 
 public class FSMmain {
-    public static void main (String[] args){
+    public static void main(String[] args) {
 
     }
 }
