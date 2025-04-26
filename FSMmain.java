@@ -435,7 +435,10 @@ class FSMCommandHandler {
         // İleride: Transitions map'ini yazdırmak için FSM'e getter eklersin
     }
 
-    public String executeFSM(String input) {
+    public String executeFSM(String input) throws InvalidInputException {
+        if(input==null || input.isEmpty()) {
+            throw new InvalidInputException("Input cannot be null or empty");
+        }
         ArrayList<String> trace = (ArrayList<String>) fsm.traceFSM(input);
         StringBuilder result = new StringBuilder();
         for (String state : trace) {
