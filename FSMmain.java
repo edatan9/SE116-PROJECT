@@ -597,125 +597,195 @@ class FileManager {
         }
 
 
-    class Serializer implements Serializable {
-        public void serializeFSM(FSM fsm, String filename) throws FileOperationException {
-            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
+class Serializer implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    public void serializeFSM(FSM fsm, String filename) throws FileOperationException, InvalidFileNameException, InvalidFilePathException {
+        // Validate file name
+        if (filename == null || filename.trim().isEmpty()) {
+            throw new InvalidFileNameException("File name cannot be null or empty");
+        }
+
+        // Check if file name contains invalid characters
+        if (filename.matches(".*[\\\\/:*?\"<>|].*")) {
+            throw new InvalidFileNameException("File name contains invalid characters");
+        }
+
+        try {
+            // Validate file path
+            File file = new File(filename);
+            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                throw new InvalidFilePathException("Directory path does not exist: " + file.getParent());
+            }
+
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 // Store the FSM's state instead of the FSM itself
                 SerializableFSMState state = new SerializableFSMState(fsm);
                 oos.writeObject(state);
             } catch (IOException e) {
-                throw new FileOperationException("Error serializing FSM to file " + filename + ": " + e.getMessage());
+                throw new FileOperationException("Error serializing FSM to file '" + filename + "': " + e.getMessage());
             }
+        } catch (SecurityException e) {
+            throw new FileOperationException("Security violation when accessing file '" + filename + "': " + e.getMessage());
+        }
+    }
+
+    public FSM deserializeFSM(String filename) throws FileOperationException, InvalidFileNameException,
+            InvalidFilePathException, InvalidFileFormatException {
+        // Validate file name
+        if (filename == null || filename.trim().isEmpty()) {
+            throw new InvalidFileNameException("File name cannot be null or empty");
         }
 
-        public FSM deserializeFSM(String filename) throws FileOperationException {
-            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
+        // Check if file name contains invalid characters
+        if (filename.matches(".*[\\\\/:*?\"<>|].*")) {
+            throw new InvalidFileNameException("File name contains invalid characters");
+        }
+
+        try {
+            File file = new File(filename);
+
+            // Check if file exists
+            if (!file.exists()) {
+                throw new InvalidFilePathException("File does not exist: " + filename);
+            }
+
+            // Check if file is readable
+            if (!file.canRead()) {
+                throw new FileOperationException("Cannot read file: " + filename);
+            }
+
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
                 Object obj = ois.readObject();
                 if (obj instanceof SerializableFSMState) {
                     SerializableFSMState state = (SerializableFSMState) obj;
-                    return state.toFSM();
+                    try {
+                        return state.toFSM();
+                    } catch (InvalidSymbolException | InvalidStateException | TransitionException e) {
+                        throw new InvalidFileFormatException("File contains invalid FSM data: " + e.getMessage());
+                    }
                 } else {
-                    throw new FileOperationException("File " + filename + " does not contain a valid FSM object");
+                    throw new InvalidFileFormatException("File '" + filename + "' does not contain a valid FSM object");
                 }
-            } catch (IOException | ClassNotFoundException e) {
-                throw new FileOperationException("Error deserializing FSM from file " + filename + ": " + e.getMessage());
+            } catch (InvalidClassException e) {
+                throw new InvalidFileFormatException("Incompatible FSM version in file '" + filename + "'");
+            } catch (ClassNotFoundException e) {
+                throw new InvalidFileFormatException("Missing class definition when deserializing from '" + filename + "'");
+            } catch (IOException e) {
+                throw new FileOperationException("Error reading FSM from file '" + filename + "': " + e.getMessage());
+            }
+        } catch (SecurityException e) {
+            throw new FileOperationException("Security violation when accessing file '" + filename + "': " + e.getMessage());
+        }
+    }
+
+    public static class SerializableFSMState implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private Set<String> symbols;
+        private Set<String> states;
+        private Set<String> finalStates;
+        private String initialState;
+        private Map<SerializablePair<String, String>, String> transitions;
+
+        public SerializableFSMState(FSM fsm) {
+            this.symbols = new HashSet<>(fsm.getSymbols());
+            this.states = new HashSet<>(fsm.getStates());
+            this.finalStates = new HashSet<>(fsm.getFinalStates());
+            this.initialState = fsm.getCurrentState();
+
+            // Convert transitions to serializable format
+            this.transitions = new HashMap<>();
+            Map<Pair<String, String>, String> fsmTransitions = fsm.getTransitions();
+            for (Map.Entry<Pair<String, String>, String> entry : fsmTransitions.entrySet()) {
+                SerializablePair<String, String> key = new SerializablePair<>(
+                        entry.getKey().getFirst(), entry.getKey().getSecond());
+                transitions.put(key, entry.getValue());
             }
         }
 
-        private static class SerializableFSMState implements Serializable {
+        public FSM toFSM() throws InvalidSymbolException, InvalidStateException, TransitionException {
+            FSM fsm = new FSM();
+
+            // Add symbols
+            for (String symbol : symbols) {
+                fsm.addSymbol(symbol);
+            }
+
+            // Add states
+            for (String state : states) {
+                fsm.addState(state);
+            }
+
+            // Set initial state
+            if (initialState != null) {
+                fsm.setInitialState(initialState);
+            }
+
+            // Add final states
+            for (String finalState : finalStates) {
+                fsm.addFinalState(finalState);
+            }
+
+            // Add transitions
+            for (Map.Entry<SerializablePair<String, String>, String> entry : transitions.entrySet()) {
+                String symbol = entry.getKey().getFirst();
+                String currentState = entry.getKey().getSecond();
+                String nextState = entry.getValue();
+
+                // Verify symbol, current state and next state are valid before adding transition
+                if (!symbols.contains(symbol)) {
+                    throw new InvalidSymbolException("Invalid symbol in serialized FSM: " + symbol);
+                }
+
+                if (!states.contains(currentState)) {
+                    throw new InvalidStateException("Invalid current state in serialized FSM: " + currentState);
+                }
+
+                if (!states.contains(nextState)) {
+                    throw new InvalidStateException("Invalid next state in serialized FSM: " + nextState);
+                }
+
+                fsm.addTransition(symbol, currentState, nextState);
+            }
+
+            return fsm;
+        }
+
+        public static class SerializablePair<F, S> implements Serializable {
             private static final long serialVersionUID = 1L;
 
-            private Set<String> symbols;
-            private Set<String> states;
-            private Set<String> finalStates;
-            private String initialState;
-            private Map<SerializablePair<String, String>, String> transitions;
+            private final F first;
+            private final S second;
 
-            public SerializableFSMState(FSM fsm) {
-                this.symbols = fsm.getSymbols();
-                this.states = fsm.getStates();
-                this.finalStates = fsm.getFinalStates();
-                this.initialState = fsm.getCurrentState();
-
-                // Convert transitions to serializable format
-                this.transitions = new HashMap<>();
-                Map<Pair<String, String>, String> fsmTransitions = fsm.getTransitions();
-                for (Map.Entry<Pair<String, String>, String> entry : fsmTransitions.entrySet()) {
-                    SerializablePair<String, String> key = new SerializablePair<>(
-                            entry.getKey().getFirst(), entry.getKey().getSecond());
-                    transitions.put(key, entry.getValue());
-                }
+            public SerializablePair(F first, S second) {
+                this.first = first;
+                this.second = second;
             }
 
-            public FSM toFSM() {
-                FSM fsm = new FSM();
-
-                // Add symbols
-                for (String symbol : symbols) {
-                    fsm.addSymbol(symbol);
-                }
-
-                // Add states
-                for (String state : states) {
-                    fsm.addState(state);
-                }
-
-                // Set initial state
-                if (initialState != null) {
-                    fsm.setInitialState(initialState);
-                }
-
-                // Add final states
-                for (String finalState : finalStates) {
-                    fsm.addFinalState(finalState);
-                }
-
-                // Add transitions
-                for (Map.Entry<SerializablePair<String, String>, String> entry : transitions.entrySet()) {
-                    fsm.addTransition(
-                            entry.getKey().getFirst(),
-                            entry.getKey().getSecond(),
-                            entry.getValue()
-                    );
-                }
-
-                return fsm;
+            public F getFirst() {
+                return first;
             }
 
-            private static class SerializablePair<F, S> implements Serializable {
-                private static final long serialVersionUID = 1L;
+            public S getSecond() {
+                return second;
+            }
 
-                private final F first;
-                private final S second;
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof SerializablePair)) return false;
+                SerializablePair<?, ?> pair = (SerializablePair<?, ?>) o;
+                return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
+            }
 
-                public SerializablePair(F first, S second) {
-                    this.first = first;
-                    this.second = second;
-                }
-
-                public F getFirst() {
-                    return first;
-                }
-
-                public S getSecond() {
-                    return second;
-                }
-
-                @Override
-                public boolean equals(Object o) {
-                    if (this == o) return true;
-                    if (!(o instanceof SerializablePair)) return false;
-                    SerializablePair<?, ?> pair = (SerializablePair<?, ?>) o;
-                    return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
-                }
-
-                @Override
-                public int hashCode() {
-                    return Objects.hash(first, second);
-                }
+            @Override
+            public int hashCode() {
+                return Objects.hash(first, second);
             }
         }
     }
+}
 
 
     public class FSMmain {
