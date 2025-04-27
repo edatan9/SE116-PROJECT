@@ -790,6 +790,108 @@ class Serializer implements Serializable {
     }
 }
 
+class CommandInterpreter {
+    private boolean running = true;
+
+    public void startREPL() throws InvalidCommandException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        StringBuilder buffer = new StringBuilder();
+        printPrompt();
+        try {
+            String line;
+            while (running && (line = reader.readLine()) != null) {
+                int idx = line.indexOf(';');
+                if (idx >= 0) {
+                    buffer.append(line, 0, idx);
+                    String command = buffer.toString().trim();
+                    buffer.setLength(0);
+                    processLine(command);
+                    if (running) printPrompt();
+                } else {
+                    buffer.append(line).append(" ");
+                }
+            }
+        } catch (IOException e) {
+            throw new InvalidCommandException("I/O error: " + e.getMessage());
+        }
+    }
+    public void processLine(String line) throws InvalidCommandException {
+        if (line.isEmpty()) return;
+        List<String> tokens = tokenizeCommand(line);
+        String cmd = tokens.get(0).toUpperCase();
+        switch (cmd) {
+            case "EXIT":
+                handleExitCommand();
+                break;
+            case "LOAD":
+                if (tokens.size() < 2) throw new InvalidCommandException("LOAD requires filename");
+                handleLoadCommand(tokens.get(1));
+                break;
+            case "EXECUTE":
+                if (tokens.size() < 2) throw new InvalidCommandException("EXECUTE requires input string");
+                handleExecute(tokens.get(1));
+                break;
+            case "LOG":
+                handleLogging(tokens.size() > 1 ? tokens.get(1) : null);
+                break;
+            case "CLEAR":
+                // TODO: clear FSM data
+                System.out.println("CLEARED");
+                break;
+            default:
+                throw new InvalidCommandException("Invalid command: " + cmd);
+        }
+    }
+    public List<String> tokenizeCommand(String input) {
+        List<String> parts = new ArrayList<>();
+        for (String tok : input.trim().split("\\s+")) {
+            if (!tok.isEmpty()) parts.add(tok);
+        }
+        return parts;
+    }
+
+    void handleExitCommand() {
+        System.out.println("TERMINATED BY USER");
+        running = false;
+    }
+    void handleLoadCommand(String filename) {
+        try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
+            String line;
+            StringBuilder buf = new StringBuilder();
+            while ((line = file.readLine()) != null) {
+                int idx = line.indexOf(';');
+                if (idx >= 0) {
+                    buf.append(line, 0, idx);
+                    processLine(buf.toString().trim());
+                    buf.setLength(0);
+                } else {
+                    buf.append(line).append(" ");
+                }
+            }
+        } catch (IOException | InvalidCommandException e) {
+            System.err.println("Error loading file: " + e.getMessage());
+        }
+    }
+
+    void handleExecute(String input) {
+        // FR14
+        System.out.println("EXECUTED: " + input);
+        // TODO: integrate CommandProcessor
+    }
+    void handleLogging(String filename) {
+        if (filename == null) {
+            System.out.println("STOPPED LOGGING");
+        } else {
+            System.out.println("LOGGING to " + filename);
+            // TODO: open log file
+        }
+    }
+
+    void printPrompt() {
+        System.out.print("? ");
+    }
+}
+
 
     public class FSMmain {
         public static void main(String[] args) {
