@@ -904,7 +904,7 @@ class CommandProcessor {
         this.fileManager = new FileManager(fsm);
         this.serializer  = new Serializer();
     }
-    
+
     String processCommand(List<String> tokens) throws InvalidCommandException {
         if (tokens.isEmpty()) {
             throw new InvalidCommandException("No command provided");
@@ -1016,7 +1016,11 @@ class CommandProcessor {
     }
 }
 
-
+class InvalidCommandException extends Exception {
+    InvalidCommandException(String message) {
+        super(message);
+    }
+}
 
     public class FSMmain {
         public static void main(String[] args) {
