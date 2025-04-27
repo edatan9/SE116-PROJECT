@@ -892,6 +892,131 @@ class CommandInterpreter {
     }
 }
 
+class CommandProcessor {
+    private FSM fsm;
+    private FSMCommandHandler handler;
+    private FileManager fileManager;
+    private Serializer serializer;
+
+    CommandProcessor() {
+        this.fsm         = new FSM();
+        this.handler     = new FSMCommandHandler(fsm);
+        this.fileManager = new FileManager(fsm);
+        this.serializer  = new Serializer();
+    }
+    
+    String processCommand(List<String> tokens) throws InvalidCommandException {
+        if (tokens.isEmpty()) {
+            throw new InvalidCommandException("No command provided");
+        }
+        String cmd = tokens.get(0).toUpperCase();
+        try {
+            switch (cmd) {
+                case "SYMBOLS":
+                    if (tokens.size() == 1) {
+                        return handler.getFSM().getSymbols().toString();
+                    } else {
+                        String[] syms = tokens.subList(1, tokens.size())
+                                .toArray(new String[0]);
+                        handler.handleSymbolsCommand(syms);
+                        return null;
+                    }
+
+                case "STATES":
+                    if (tokens.size() == 1) {
+                        return handler.getFSM().getStates().toString();
+                    } else {
+                        String[] sts = tokens.subList(1, tokens.size())
+                                .toArray(new String[0]);
+                        handler.handleStatesCommand(sts);
+                        return null;
+                    }
+
+                case "INITIAL-STATE":
+                    if (tokens.size() != 2) {
+                        throw new InvalidCommandException("INITIAL-STATE requires one state");
+                    }
+                    handler.handleInitialStateCommand(tokens.get(1));
+                    return null;
+
+                case "FINAL-STATES":
+                    if (tokens.size() == 1) {
+                        return handler.getFSM().getFinalStates().toString();
+                    } else {
+                        String[] fs = tokens.subList(1, tokens.size())
+                                .toArray(new String[0]);
+                        handler.handleFinalStatesCommand(fs);
+                        return null;
+                    }
+
+                case "TRANSITIONS":
+                    if (tokens.size() == 1) {
+                        return handler.getFSM().getTransitions().toString();
+                    } else {
+                        String raw = String.join(" ", tokens.subList(1, tokens.size()));
+                        String[] parts = raw.split("\\s*,\\s*");
+                        handler.handleTransitionsCommand(parts);
+                        return null;
+                    }
+
+                case "PRINT":
+                    if (tokens.size() == 1) {
+                        handler.handlePrintCommand(null);
+                    } else {
+                        fileManager.writeToFile(tokens.get(1));
+                    }
+                    return null;
+
+                case "COMPILE":
+                    if (tokens.size() != 2) {
+                        throw new InvalidCommandException("COMPILE requires filename");
+                    }
+                    serializer.serializeFSM(fsm, tokens.get(1));
+                    return "Compile successful";
+
+                case "LOAD":
+                    if (tokens.size() != 2) {
+                        throw new InvalidCommandException("LOAD requires filename");
+                    }
+                    String fn = tokens.get(1);
+                    if (fn.toLowerCase().endsWith(".fs")) {
+                        FSM loaded = serializer.deserializeFSM(fn);
+                        this.fsm = loaded;
+                        this.handler = new FSMCommandHandler(fsm);
+                        this.fileManager = new FileManager(fsm);
+                    } else {
+                        fileManager.readToFile(fn);
+                    }
+                    return null;
+
+                case "EXECUTE":
+                    if (tokens.size() != 2) {
+                        throw new InvalidCommandException("EXECUTE requires input string");
+                    }
+                    return handler.executeFSM(tokens.get(1));
+
+                case "CLEAR":
+                    fsm.clear();
+                    return "CLEARED";
+
+                case "LOG":
+                    if (tokens.size() == 1) {
+                        return Logger.stopLogging();
+                    } else {
+                        return Logger.startLogging(tokens.get(1));
+                    }
+
+                default:
+                    throw new InvalidCommandException("Invalid command: " + cmd);
+            }
+        } catch (Exception e) {
+            // Altyapıdan gelen tüm hataları tek tip olarak sarmala
+            throw new InvalidCommandException(e.getMessage());
+        }
+    }
+}
+
+
 
     public class FSMmain {
         public static void main(String[] args) {
