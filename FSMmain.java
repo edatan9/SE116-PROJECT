@@ -142,7 +142,7 @@ interface InterFSM {
      }
 
     @Override
-    public boolean addSymbol(String symbol) {
+    public boolean addSymbol(String symbol)  {
         if (symbol == null || !symbol.matches("[a-zA-Z0-9]")) {
             System.out.println("Invalid symbol: " + symbol);
             return false;
@@ -829,38 +829,17 @@ class CommandInterpreter {
         }
     }
     public void processLine(String line) throws InvalidCommandException {
-        try {
-            if (line.isEmpty()) return;
-            List<String> tokens = tokenizeCommand(line);
-            String cmd = tokens.get(0).toUpperCase();
-            switch (cmd) {
-                case "EXIT":
-                    handleExitCommand();
-                    break;
-                case "LOAD":
-                    if (tokens.size() < 2) throw new InvalidCommandException("LOAD requires filename");
-                    handleLoadCommand(tokens.get(1));
-                    break;
-                case "EXECUTE":
-                    if (tokens.size() < 2) throw new InvalidCommandException("EXECUTE requires input string");
-                    handleExecute(tokens.get(1));
-                    break;
-                case "LOG":
-                    handleLogging(tokens.size() > 1 ? tokens.get(1) : null);
-                    break;
-                case "CLEAR":
-                    // TODO: clear FSM data
-                    System.out.println("CLEARED");
-                    break;
-                default:
-                    String result = processor.processCommand(tokens);
-                    if (result != null) {
-                        System.out.println(result);
-                    }
-                    break;
+        if (line.isEmpty()) return;
+        List<String> tokens = tokenizeCommand(line);
+        String cmd = tokens.get(0).toUpperCase();
+
+        if (cmd.equals("EXIT")) {
+            handleExitCommand();
+        } else {
+            String result = processor.processCommand(tokens);
+            if (result != null) {
+                System.out.println(result);
             }
-        }catch (InvalidCommandException e) {
-            throw new RuntimeException("Invalid command: " + e.getMessage());
         }
     }
     public List<String> tokenizeCommand(String input) {
@@ -912,6 +891,7 @@ class CommandInterpreter {
         System.out.print("? ");
     }
 }
+
 
 class CommandProcessor {
     private FSM fsm;
