@@ -44,6 +44,12 @@ class FileOperationException extends Exception {
     }
 }
 
+ class InvalidCommandException extends Exception {
+      InvalidCommandException(String message) {
+          super(message);
+      }
+}
+
 interface InterFSM {
     boolean addSymbol(String symbol);
     boolean addState(String state);
@@ -1018,11 +1024,7 @@ class CommandProcessor {
     }
 }
 
-class InvalidCommandException extends Exception {
-    InvalidCommandException(String message) {
-        super(message);
-    }
-}
+
 
     public class FSMmain {
         private static final String VERSION = "1.0";  // TODO: replace with your Git version identifier
@@ -1048,4 +1050,5 @@ class InvalidCommandException extends Exception {
                 System.err.println("Error: " + e.getMessage());
 
         }
-    }}
+    }
+}
