@@ -800,6 +800,11 @@ class Serializer implements Serializable {
 
 class CommandInterpreter {
     private boolean running = true;
+    private CommandProcessor processor;
+
+    public CommandInterpreter() {
+        this.processor=new CommandProcessor();
+    }
 
     public void startREPL() throws InvalidCommandException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -824,30 +829,38 @@ class CommandInterpreter {
         }
     }
     public void processLine(String line) throws InvalidCommandException {
-        if (line.isEmpty()) return;
-        List<String> tokens = tokenizeCommand(line);
-        String cmd = tokens.get(0).toUpperCase();
-        switch (cmd) {
-            case "EXIT":
-                handleExitCommand();
-                break;
-            case "LOAD":
-                if (tokens.size() < 2) throw new InvalidCommandException("LOAD requires filename");
-                handleLoadCommand(tokens.get(1));
-                break;
-            case "EXECUTE":
-                if (tokens.size() < 2) throw new InvalidCommandException("EXECUTE requires input string");
-                handleExecute(tokens.get(1));
-                break;
-            case "LOG":
-                handleLogging(tokens.size() > 1 ? tokens.get(1) : null);
-                break;
-            case "CLEAR":
-                // TODO: clear FSM data
-                System.out.println("CLEARED");
-                break;
-            default:
-                throw new InvalidCommandException("Invalid command: " + cmd);
+        try {
+            if (line.isEmpty()) return;
+            List<String> tokens = tokenizeCommand(line);
+            String cmd = tokens.get(0).toUpperCase();
+            switch (cmd) {
+                case "EXIT":
+                    handleExitCommand();
+                    break;
+                case "LOAD":
+                    if (tokens.size() < 2) throw new InvalidCommandException("LOAD requires filename");
+                    handleLoadCommand(tokens.get(1));
+                    break;
+                case "EXECUTE":
+                    if (tokens.size() < 2) throw new InvalidCommandException("EXECUTE requires input string");
+                    handleExecute(tokens.get(1));
+                    break;
+                case "LOG":
+                    handleLogging(tokens.size() > 1 ? tokens.get(1) : null);
+                    break;
+                case "CLEAR":
+                    // TODO: clear FSM data
+                    System.out.println("CLEARED");
+                    break;
+                default:
+                    String result = processor.processCommand(tokens);
+                    if (result != null) {
+                        System.out.println(result);
+                    }
+                    break;
+            }
+        }catch (InvalidCommandException e) {
+            throw new RuntimeException("Invalid command: " + e.getMessage());
         }
     }
     public List<String> tokenizeCommand(String input) {
@@ -913,7 +926,7 @@ class CommandProcessor {
         this.serializer  = new Serializer();
     }
 
-    String processCommand(List<String> tokens) throws InvalidCommandException {
+   public String processCommand(List<String> tokens) throws InvalidCommandException {
         if (tokens.isEmpty()) {
             throw new InvalidCommandException("No command provided");
         }
