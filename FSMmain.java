@@ -1017,10 +1017,30 @@ class CommandProcessor {
     }
 }
 
+import java.io.IOException;
+import java.util.Properties;
+
+public class GitVersion {
+    private static final Properties GIT_PROPERTIES = new Properties();
+    private static final String UNKNOWN = "unknown";
+
+    static {
+        try {
+            GIT_PROPERTIES.load(GitVersion.class.getClassLoader().getResourceAsStream("git.properties"));
+        } catch (IOException | NullPointerException e) {
+        }
+    }
+
+    public static String getVersion() {
+        String commitId = GIT_PROPERTIES.getProperty("git.commit.id.abbrev", UNKNOWN);
+        return "1.0-" + commitId;
+    }
+}
+
 
 
     public class FSMmain {
-        private static final String VERSION = "1.0";  // TODO: replace with your Git version identifier
+        private static final String VERSION = GitVersion.getVersion();  // TODO: replace with your Git version identifier
 
         public static void main(String[] args) {
             // FR1: print version and current date/time
