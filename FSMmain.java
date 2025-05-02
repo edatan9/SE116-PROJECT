@@ -2,6 +2,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.io.*;
+import java.util.Properties;
+
 
 // custom exceptions
 class InvalidSymbolException extends Exception {
@@ -1016,7 +1018,22 @@ class CommandProcessor {
         }
     }
 }
+class GitVersion {
+    private static final Properties GIT_PROPERTIES = new Properties();
+    private static final String UNKNOWN = "unknown";
 
+    static {
+        try {
+            GIT_PROPERTIES.load(GitVersion.class.getClassLoader().getResourceAsStream("git.properties"));
+        } catch (IOException | NullPointerException e) {
+        }
+    }
+
+    public static String getVersion() {
+        String commitId = GIT_PROPERTIES.getProperty("git.commit.id.abbrev", UNKNOWN);
+        return "1.0-" + commitId;
+    }
+}
 
 
     public class FSMmain {
