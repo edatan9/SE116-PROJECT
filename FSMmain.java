@@ -1027,10 +1027,12 @@ class GitVersion {
             GIT_PROPERTIES.load(GitVersion.class.getClassLoader().getResourceAsStream("git.properties"));
         } catch (IOException | NullPointerException e) {
 
+
     static {
         try {
             GIT_PROPERTIES.load(GitVersion.class.getClassLoader().getResourceAsStream("git.properties"));
         } catch (IOException | NullPointerException e) {
+
         }
     }
 
