@@ -2,6 +2,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.io.*;
+import java.util.Properties;
 
 // custom exceptions
 class InvalidSymbolException extends Exception {
@@ -1017,10 +1018,31 @@ class CommandProcessor {
     }
 }
 
+class GitVersion {
+    private static final Properties GIT_PROPERTIES = new Properties();
+    private static final String UNKNOWN = "unknown";
+
+    static {
+        try {
+            GIT_PROPERTIES.load(GitVersion.class.getClassLoader().getResourceAsStream("git.properties"));
+        } catch (IOException | NullPointerException e) {
+
+    static {
+        try {
+            GIT_PROPERTIES.load(GitVersion.class.getClassLoader().getResourceAsStream("git.properties"));
+        } catch (IOException | NullPointerException e) {
+        }
+    }
+
+    public static String getVersion() {
+        String commitId = GIT_PROPERTIES.getProperty("git.commit.id.abbrev", UNKNOWN);
+        return "1.0-" + commitId;
+    }
+}
 
 
     public class FSMmain {
-        private static final String VERSION = "1.0";  // TODO: replace with your Git version identifier
+        private static final String VERSION = GitVersion.getVersion();  // TODO: replace with your Git version identifier
 
         public static void main(String[] args) {
             // FR1: print version and current date/time
@@ -1041,7 +1063,40 @@ class CommandProcessor {
 
             } catch (InvalidCommandException e) {
                 System.err.println("Error: " + e.getMessage());
-
         }
+    }
+
+    public static String getVersion() {
+        String commitId = GIT_PROPERTIES.getProperty("git.commit.id.abbrev", UNKNOWN);
+        return "1.0-" + commitId;
+    }
+}
+
+    public class FSMmain {
+        private static final String VERSION = "1.0";  // TODO: replace with your Git version identifier
+    public class FSMmain {
+        private static final String VERSION = GitVersion.getVersion();  // TODO: replace with your Git version identifier
+
+    public static void main(String[] args) {
+        // FR1: print version and current date/time
+        String now = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("MMMM d, yyyy, HH:mm"));
+        System.out.println("FSM DESIGNER " + VERSION + " " + now);
+
+        CommandInterpreter interpreter = new CommandInterpreter();
+
+        try {
+            // FR15: if a filename was passed on the command line, load it first
+            if (args.length > 0) {
+                System.out.println("Loading commands from file: " + args[0]);
+                interpreter.handleLoadCommand(args[0]);
+            }
+            // then start interactive mode
+            interpreter.startREPL();
+
+        } catch (InvalidCommandException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+
     }
 }
