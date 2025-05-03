@@ -815,6 +815,10 @@ class CommandInterpreter {
         try {
             String line;
             while (running && (line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) {
+                    printPrompt();
+                    continue;
+                }
                 int idx = line.indexOf(';');
                 if (idx >= 0) {
                     buffer.append(line, 0, idx);
@@ -828,6 +832,11 @@ class CommandInterpreter {
             }
         } catch (IOException e) {
             throw new InvalidCommandException("I/O error: " + e.getMessage());
+        } finally {
+            // Uygulama sonlanırken Logger'ı kapat
+            if (Logger.isLoggingEnabled()) {
+                Logger.stopLogging();
+            }
         }
     }
     public void processLine(String line) throws InvalidCommandException {
@@ -836,6 +845,9 @@ class CommandInterpreter {
         String cmd = tokens.get(0).toUpperCase();
 
         if (cmd.equals("EXIT")) {
+            if (Logger.isLoggingEnabled()) {
+                Logger.stopLogging();
+            }
             handleExitCommand();
         } else {
             String result = processor.processCommand(tokens);
@@ -875,20 +887,6 @@ class CommandInterpreter {
         }
     }
 
-    void handleExecute(String input) {
-        // FR14
-        System.out.println("EXECUTED: " + input);
-        // TODO: integrate CommandProcessor
-    }
-    void handleLogging(String filename) {
-        if (filename == null) {
-            System.out.println("STOPPED LOGGING");
-        } else {
-            System.out.println("LOGGING to " + filename);
-            // TODO: open log file
-        }
-    }
-
     void printPrompt() {
         System.out.print("? ");
     }
@@ -912,7 +910,8 @@ class CommandProcessor {
         if (tokens.isEmpty()) {
             throw new InvalidCommandException("No command provided");
         }
-        String cmd = tokens.get(0).toUpperCase();
+       String cmd = tokens.get(0).toUpperCase();
+       String result = null;
         try {
             switch (cmd) {
                 case "SYMBOLS":
@@ -1004,16 +1003,24 @@ class CommandProcessor {
 
                 case "LOG":
                     if (tokens.size() == 1) {
-                        return Logger.stopLogging();
+                        result = Logger.stopLogging();
+                        return result;
+                    } else if(tokens.size()==2) {
+                        result = Logger.startLogging(tokens.get(1));
+                        return result;
                     } else {
-                        return Logger.startLogging(tokens.get(1));
+                        throw new InvalidCommandException("LOG command requires filename");
                     }
+
 
                 default:
                     throw new InvalidCommandException("Invalid command: " + cmd);
             }
         } catch (Exception e) {
-            // Altyapıdan gelen tüm hataları tek tip olarak sarmala
+            if (Logger.isLoggingEnabled() && !cmd.equals("LOG")) {
+                String originalCommand = String.join(" ", tokens) + ";";
+                Logger.log(originalCommand, "Error: " + e.getMessage());
+            }
             throw new InvalidCommandException(e.getMessage());
         }
     }
