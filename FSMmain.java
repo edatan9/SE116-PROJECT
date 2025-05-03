@@ -1037,7 +1037,7 @@ class GitVersion {
 
 
     public class FSMmain {
-        private static final String VERSION = "1.0";  // TODO: replace with your Git version identifier
+        private static final String VERSION = GitVersion.getVersion();  // TODO: replace with your Git version identifier
 
         public static void main(String[] args) {
             // FR1: print version and current date/time
