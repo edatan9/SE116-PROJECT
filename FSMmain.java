@@ -912,6 +912,7 @@ class CommandProcessor {
         }
        String cmd = tokens.get(0).toUpperCase();
        String result = null;
+       String commandString = String.join(" ", tokens) + ";";
         try {
             switch (cmd) {
                 case "SYMBOLS":
@@ -921,8 +922,7 @@ class CommandProcessor {
                         String[] syms = tokens.subList(1, tokens.size())
                                 .toArray(new String[0]);
                         handler.handleSymbolsCommand(syms);
-                        return null;
-                    }
+                    }break;
 
                 case "STATES":
                     if (tokens.size() == 1) {
@@ -931,15 +931,14 @@ class CommandProcessor {
                         String[] sts = tokens.subList(1, tokens.size())
                                 .toArray(new String[0]);
                         handler.handleStatesCommand(sts);
-                        return null;
-                    }
+                    }break;
 
                 case "INITIAL-STATE":
                     if (tokens.size() != 2) {
                         throw new InvalidCommandException("INITIAL-STATE requires one state");
                     }
                     handler.handleInitialStateCommand(tokens.get(1));
-                    return null;
+                    break;
 
                 case "FINAL-STATES":
                     if (tokens.size() == 1) {
@@ -948,8 +947,7 @@ class CommandProcessor {
                         String[] fs = tokens.subList(1, tokens.size())
                                 .toArray(new String[0]);
                         handler.handleFinalStatesCommand(fs);
-                        return null;
-                    }
+                    }break;
 
                 case "TRANSITIONS":
                     if (tokens.size() == 1) {
@@ -958,23 +956,22 @@ class CommandProcessor {
                         String raw = String.join(" ", tokens.subList(1, tokens.size()));
                         String[] parts = raw.split("\\s*,\\s*");
                         handler.handleTransitionsCommand(parts);
-                        return null;
-                    }
+                    }break;
 
                 case "PRINT":
                     if (tokens.size() == 1) {
                         handler.handlePrintCommand(null);
                     } else {
                         fileManager.writeToFile(tokens.get(1));
-                    }
-                    return null;
+                    }break;
 
                 case "COMPILE":
                     if (tokens.size() != 2) {
                         throw new InvalidCommandException("COMPILE requires filename");
                     }
                     serializer.serializeFSM(fsm, tokens.get(1));
-                    return "Compile successful";
+                    result= "Compile successful";
+                    break;
 
                 case "LOAD":
                     if (tokens.size() != 2) {
@@ -989,33 +986,39 @@ class CommandProcessor {
                     } else {
                         fileManager.readToFile(fn);
                     }
-                    return null;
+                    break;
 
                 case "EXECUTE":
                     if (tokens.size() != 2) {
                         throw new InvalidCommandException("EXECUTE requires input string");
                     }
-                    return handler.executeFSM(tokens.get(1));
+                    result= handler.executeFSM(tokens.get(1));
+                    break;
 
                 case "CLEAR":
                     fsm.clear();
-                    return "CLEARED";
+                    result= "CLEARED";
+                    break;
 
                 case "LOG":
                     if (tokens.size() == 1) {
                         result = Logger.stopLogging();
-                        return result;
                     } else if(tokens.size()==2) {
                         result = Logger.startLogging(tokens.get(1));
-                        return result;
                     } else {
                         throw new InvalidCommandException("LOG command requires filename");
-                    }
-
-
+                    }break;
                 default:
                     throw new InvalidCommandException("Invalid command: " + cmd);
             }
+            if (Logger.isLoggingEnabled() && !cmd.equals("LOG")) {
+                String logResult = "";
+                if (result != null) {
+                    logResult = result;
+                }
+                Logger.log(commandString, logResult);
+            }
+            return result;
         } catch (Exception e) {
             if (Logger.isLoggingEnabled() && !cmd.equals("LOG")) {
                 String originalCommand = String.join(" ", tokens) + ";";
@@ -1023,6 +1026,7 @@ class CommandProcessor {
             }
             throw new InvalidCommandException(e.getMessage());
         }
+
     }
 }
 class GitVersion {
