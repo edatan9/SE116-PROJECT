@@ -537,27 +537,25 @@ class FileManager {
 
     public void readToFile(String filename) throws FileOperationException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            List<String> allLines = new ArrayList<>();
             String line;
-
-            while ((line = reader.readLine()) != null) {
-                allLines.add(line);
-            }
-
-            CommandInterpreter interpreter = new CommandInterpreter();
             StringBuilder command = new StringBuilder();
             int lineNumber = 0;
 
-            for (String currentLine : allLines) {
+            while ((line = reader.readLine()) != null) {
                 lineNumber++;
-                command.append(currentLine).append(" ");
-                if (currentLine.contains(";")) {
+                command.append(line).append(" ");
+
+                if (line.contains(";")) {
                     String fullCommand = command.toString().trim();
-                    command.setLength(0);
+                    command.setLength(0); // StringBuilder'ı temizle
 
                     try {
                         System.out.println("Processing (line " + lineNumber + "): " + fullCommand);
+
+                        // Komutu analiz et ve FSM'de uygula
+                        CommandInterpreter interpreter = new CommandInterpreter();
                         interpreter.processLine(fullCommand);
+
                     } catch (InvalidCommandException e) {
                         System.err.println("Line " + lineNumber + ": " + e.getMessage());
                     }
@@ -830,6 +828,9 @@ class CommandInterpreter {
         this.processor=new CommandProcessor();
     }
 
+    private void printPrompt() {
+        System.out.print("? ");
+    }
     public void startREPL() throws InvalidCommandException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         StringBuilder buffer = new StringBuilder();
@@ -894,23 +895,41 @@ class CommandInterpreter {
         try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
             String line;
             StringBuilder buf = new StringBuilder();
+
             while ((line = file.readLine()) != null) {
-                int idx = line.indexOf(';');
-                if (idx >= 0) {
-                    buf.append(line, 0, idx);
-                    processLine(buf.toString().trim());
+                buf.append(line).append(" ");
+
+                if (line.contains(";")) {
+                    String fullLine = buf.toString().trim();
+                    int semicolonIndex = fullLine.indexOf(";");
+                    String command = fullLine.substring(0, semicolonIndex).trim();
                     buf.setLength(0);
-                } else {
-                    buf.append(line).append(" ");
+
+                    // Önce LOAD komutunun okuduğu komutu yazdır
+                    System.out.println(command + ";");
+
+                    // Sonra komut satırını işle ve çıktısını yazdır
+                    List<String> tokens = tokenizeCommand(command);
+                    if (!tokens.isEmpty()) {
+                        String cmd = tokens.get(0).toUpperCase();
+                        if (cmd.equals("EXIT")) {
+                            handleExitCommand();
+                        } else {
+                            try {
+                                String result = processor.processCommand(tokens);
+                                if (result != null) {
+                                    System.out.println(result);
+                                }
+                            } catch (InvalidCommandException e) {
+                                System.err.println("Error in command: " + e.getMessage());
+                            }
+                        }
+                    }
                 }
             }
-        } catch (IOException | InvalidCommandException e) {
+        } catch (IOException e) {
             System.err.println("Error loading file: " + e.getMessage());
         }
-    }
-
-    void printPrompt() {
-        System.out.print("? ");
     }
 }
 
@@ -927,7 +946,48 @@ class CommandProcessor {
         this.fileManager = new FileManager(fsm);
         this.serializer  = new Serializer();
     }
+    private void handleLoadFromTextFile(String filename) throws InvalidCommandException {
+        try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
+            String line;
+            StringBuilder buf = new StringBuilder();
 
+            while ((line = file.readLine()) != null) {
+                buf.append(line).append(" ");
+
+                if (line.contains(";")) {
+                    String fullLine = buf.toString().trim();
+                    int semicolonIndex = fullLine.indexOf(";");
+                    String command = fullLine.substring(0, semicolonIndex).trim();
+                    buf.setLength(0);
+
+                    // Komutu yazdır
+                    System.out.println(command + ";");
+
+                    // Komutu işle
+                    List<String> cmdTokens = tokenizeCommand(command);
+                    if (!cmdTokens.isEmpty()) {
+                        String cmd = cmdTokens.get(0).toUpperCase();
+                        if (!cmd.equalsIgnoreCase("LOAD")) { // Kendimizi çağırmamak için
+                            String result = processCommand(cmdTokens);
+                            if (result != null) {
+                                System.out.println(result);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new InvalidCommandException("Error loading file: " + e.getMessage());
+        }
+    }
+
+    private List<String> tokenizeCommand(String input) {
+        List<String> parts = new ArrayList<>();
+        for (String tok : input.trim().split("\\s+")) {
+            if (!tok.isEmpty()) parts.add(tok);
+        }
+        return parts;
+    }
    public String processCommand(List<String> tokens) throws InvalidCommandException {
         if (tokens.isEmpty()) {
             throw new InvalidCommandException("No command provided");
@@ -1006,7 +1066,8 @@ class CommandProcessor {
                         this.handler = new FSMCommandHandler(fsm);
                         this.fileManager = new FileManager(fsm);
                     } else {
-                        fileManager.readToFile(fn);
+                        // Dosyadan okuma ve komutları işleme
+                        handleLoadFromTextFile(fn);
                     }
                     break;
 
