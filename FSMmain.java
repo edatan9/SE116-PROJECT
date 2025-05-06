@@ -947,39 +947,53 @@ class CommandProcessor {
         this.serializer  = new Serializer();
     }
     private void handleLoadFromTextFile(String filename) throws InvalidCommandException {
+        List<String> errorMessages = new ArrayList<>();
+
         try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
             String line;
             StringBuilder buf = new StringBuilder();
+            int lineNumber = 0;
 
             while ((line = file.readLine()) != null) {
+                lineNumber++;
                 buf.append(line).append(" ");
 
                 if (line.contains(";")) {
                     String fullLine = buf.toString().trim();
                     int semicolonIndex = fullLine.indexOf(";");
                     String command = fullLine.substring(0, semicolonIndex).trim();
-                    buf.setLength(0);
+                    buf.setLength(0); // temizle
 
-                    // Komutu yazdır
                     System.out.println(command + ";");
 
-                    // Komutu işle
                     List<String> cmdTokens = tokenizeCommand(command);
                     if (!cmdTokens.isEmpty()) {
                         String cmd = cmdTokens.get(0).toUpperCase();
-                        if (!cmd.equalsIgnoreCase("LOAD")) { // Kendimizi çağırmamak için
-                            String result = processCommand(cmdTokens);
-                            if (result != null) {
-                                System.out.println(result);
+                        if (!cmd.equalsIgnoreCase("LOAD")) {
+                            try {
+                                String result = processCommand(cmdTokens);
+                                if (result != null) System.out.println(result);
+                            } catch (Exception e) {
+                                errorMessages.add("Line " + lineNumber + ": " + e.getMessage());
                             }
                         }
                     }
                 }
             }
+
+            // Dosya bittiğinde hataları yazdır
+            if (!errorMessages.isEmpty()) {
+                System.out.println("\nERROR SUMMARY:");
+                for (String msg : errorMessages) {
+                    System.out.println(msg);
+                }
+            }
+
         } catch (IOException e) {
             throw new InvalidCommandException("Error loading file: " + e.getMessage());
         }
     }
+
 
     private List<String> tokenizeCommand(String input) {
         List<String> parts = new ArrayList<>();
