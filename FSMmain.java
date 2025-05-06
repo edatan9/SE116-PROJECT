@@ -389,13 +389,27 @@ class FSMCommandHandler {
     }
 
     public void handleSymbolsCommand(String[] tokens) throws InvalidSymbolException {
+        List<String> errorMessages = new ArrayList<>();
+
         for (String symbol : tokens) {
-            if (!symbol.matches("[a-zA-Z0-9]")) {
-                throw new InvalidSymbolException("Invalid symbol: " + symbol);
+            if (symbol.length() != 1) {
+                errorMessages.add(symbol + " is not allowed as a symbol, length must be 1.");
+                continue;
             }
+
+            if (!symbol.matches("[a-zA-Z0-9]")) {
+                errorMessages.add(symbol + " is not allowed, not alphanumeric.");
+                continue;
+            }
+
             fsm.addSymbol(symbol.toUpperCase());
         }
+
+        if (!errorMessages.isEmpty()) {
+            throw new InvalidSymbolException(String.join(" ", errorMessages));
+        }
     }
+
 
     public void handleStatesCommand(String[] tokens) throws InvalidStateException {
         for (String state : tokens) {
@@ -526,26 +540,34 @@ class FileManager {
             List<String> allLines = new ArrayList<>();
             String line;
 
-            // Tüm satırları listeye alıyoruz
             while ((line = reader.readLine()) != null) {
                 allLines.add(line);
             }
 
-            // Sonra satırları işliyoruz
+            CommandInterpreter interpreter = new CommandInterpreter();
             StringBuilder command = new StringBuilder();
+            int lineNumber = 0;
+
             for (String currentLine : allLines) {
+                lineNumber++;
                 command.append(currentLine).append(" ");
                 if (currentLine.contains(";")) {
                     String fullCommand = command.toString().trim();
-                    System.out.println("Processing: " + fullCommand);
-                    // Gerekli işlemi yap
                     command.setLength(0);
+
+                    try {
+                        System.out.println("Processing (line " + lineNumber + "): " + fullCommand);
+                        interpreter.processLine(fullCommand);
+                    } catch (InvalidCommandException e) {
+                        System.err.println("Line " + lineNumber + ": " + e.getMessage());
+                    }
                 }
             }
         } catch (IOException e) {
             throw new FileOperationException("Error with reading file: " + e.getMessage());
         }
     }
+
 }
 
     class Logger {
