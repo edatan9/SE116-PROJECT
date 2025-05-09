@@ -456,7 +456,14 @@ class FSMCommandHandler {
         System.out.println("STATES: " + fsm.getStates());
         System.out.println("INITIAL STATE: " + fsm.getCurrentState());
         System.out.println("FINAL STATES: " + fsm.getFinalStates());
-        // İleride: Transitions map'ini yazdırmak için FSM'e getter eklersin
+        System.out.println("TRANSITIONS:");
+        for (Map.Entry<Pair<String, String>, String> entry : fsm.getTransitions().entrySet()) {
+            Pair<String, String> key = entry.getKey();
+            String symbol = key.getFirst();
+            String from = key.getSecond();
+            String to = entry.getValue();
+            System.out.println(symbol + " " + from + " " + to);
+        }
     }
     public String executeFSM(String input) throws InvalidInputException {
         if(input==null || input.isEmpty()) {
