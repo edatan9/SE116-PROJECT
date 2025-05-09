@@ -598,6 +598,11 @@ class FileManager {
                         stopLogging();
                     }
 
+                    File file = new File(filename);
+                    if (file.exists() && !file.canWrite()) {
+                        return "Error: File exists but cannot be written: " + filename; // PDF uyumlu hata mesajı
+                    }
+
                     // Create new log file or overwrite existing one
                     logWriter = new BufferedWriter(new FileWriter(filename));
                     currentLogFile = filename;
