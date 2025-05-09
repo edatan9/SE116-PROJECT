@@ -458,16 +458,28 @@ class FSMCommandHandler {
         System.out.println("FINAL STATES: " + fsm.getFinalStates());
         // İleride: Transitions map'ini yazdırmak için FSM'e getter eklersin
     }
-
     public String executeFSM(String input) throws InvalidInputException {
         if(input==null || input.isEmpty()) {
             throw new InvalidInputException("Input cannot be null or empty");
         }
+
+        // FSM'in başlangıç durumu kontrol edilmeli
+        if (fsm.getCurrentState() == null) {
+            return "Error: FSM is not initialized properly.";
+        }
+
         ArrayList<String> trace = (ArrayList<String>) fsm.traceFSM(input);
+
+        // Trace boş veya null olabilir, bu durumlar kontrol edilmeli
+        if (trace == null || trace.isEmpty()) {
+            return "Error: Execution failed.";
+        }
+
         StringBuilder result = new StringBuilder();
         for (String state : trace) {
             result.append(state).append(" ");
         }
+
         String finalState = trace.get(trace.size() - 1);
         result.append(fsm.getFinalStates().contains(finalState) ? "YES" : "NO");
         return result.toString();
@@ -631,7 +643,7 @@ class FileManager {
 
 
 class Serializer implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1;
 
     public void serializeFSM(FSM fsm, String filename) throws FileOperationException, InvalidFileNameException, InvalidFilePathException {
         // Validate file name
@@ -834,23 +846,48 @@ class CommandInterpreter {
     public void startREPL() throws InvalidCommandException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         StringBuilder buffer = new StringBuilder();
+        int lineNumber = 0;
         printPrompt();
         try {
             String line;
             while (running && (line = reader.readLine()) != null) {
+                lineNumber++;  // Her satır için numarayı artır
+
                 if (line.trim().isEmpty()) {
                     printPrompt();
                     continue;
                 }
+
+                // Satırda noktalı virgül var mı kontrol et
                 int idx = line.indexOf(';');
+
                 if (idx >= 0) {
+                    // Noktalı virgüle kadar olan kısmı tampona ekle
                     buffer.append(line, 0, idx);
                     String command = buffer.toString().trim();
+
+                    // Komutu işle
+                    if (!command.isEmpty()) {
+                        processLine(command);
+                    }
+
+                    // Tamponu temizle
                     buffer.setLength(0);
-                    processLine(command);
+
+                    // Noktalı virgülden sonraki kısmı kontrol et, varsa tampona ekle
+                    if (idx < line.length() - 1) {
+                        buffer.append(line.substring(idx + 1));
+                    }
+
                     if (running) printPrompt();
                 } else {
+                    // Noktalı virgül yok, hata mesajı göster
+                    System.out.println("Line " + lineNumber + ": semicolon expected");
+
+                    // Girdiyi tampona ekle
                     buffer.append(line).append(" ");
+
+                    if (running) printPrompt();
                 }
             }
         } catch (IOException e) {
@@ -863,28 +900,125 @@ class CommandInterpreter {
         }
     }
     public void processLine(String line) throws InvalidCommandException {
-        if (line.isEmpty()) return;
-        List<String> tokens = tokenizeCommand(line);
-        String cmd = tokens.get(0).toUpperCase();
+        if (line == null || line.isEmpty()) return;
 
-        if (cmd.equals("EXIT")) {
-            if (Logger.isLoggingEnabled()) {
-                Logger.stopLogging();
+        // Komut adlarını içeren bir liste
+        List<String> commandNames = Arrays.asList("SYMBOLS", "STATES", "INITIAL-STATE", "FINAL-STATES",
+                "TRANSITIONS", "PRINT", "COMPILE", "LOAD", "EXECUTE",
+                "CLEAR", "LOG", "EXIT");
+
+        // Satırı tokenlara ayır
+        List<String> tokens = tokenizeCommand(line);
+        if (tokens == null || tokens.isEmpty()) return;
+
+        // Tüm olası komut başlangıçlarını bul
+        List<Integer> commandStartIndices = new ArrayList<>();
+        commandStartIndices.add(0); // İlk komut her zaman 0. indeksten başlar
+
+        for (int i = 1; i < tokens.size(); i++) {
+            if (commandNames.contains(tokens.get(i).toUpperCase())) {
+                commandStartIndices.add(i);
             }
-            handleExitCommand();
-        } else {
-            String result = processor.processCommand(tokens);
-            if (result != null) {
-                System.out.println(result);
+        }
+
+        // Eğer komut başlangıç indeksleri listesi boşsa, return
+        if (commandStartIndices.isEmpty()) return;
+
+        // Her komutu ayrı ayrı işle
+        for (int i = 0; i < commandStartIndices.size(); i++) {
+            int startIndex = commandStartIndices.get(i);
+            // Dizin sınırları kontrolü
+            if (startIndex >= tokens.size()) continue;
+
+            int endIndex = (i < commandStartIndices.size() - 1) ?
+                    commandStartIndices.get(i + 1) : tokens.size();
+
+            // Dizin sınırları kontrolü
+            if (endIndex > tokens.size()) endIndex = tokens.size();
+
+            List<String> command = tokens.subList(startIndex, endIndex);
+            if (command.isEmpty()) continue;
+
+            String cmd = command.get(0).toUpperCase();
+
+            // EXIT komutu için özel işleme
+            if (cmd.equals("EXIT")) {
+                if (Logger.isLoggingEnabled()) {
+                    Logger.stopLogging();
+                }
+                handleExitCommand();
+                break;
+            }
+            // TRANSITIONS komutu için özel işleme
+            else if (cmd.equals("TRANSITIONS")) {
+                List<String> transitionTokens = tokenizeTransitionCommand(line.substring(line.indexOf("TRANSITIONS")));
+                if (transitionTokens != null && !transitionTokens.isEmpty()) {
+                    String result = processor.processCommand(transitionTokens);
+                    if (result != null) {
+                        System.out.println(result);
+                    }
+                }
+            }
+            // LOAD komutu için özel işleme
+            else if (cmd.equals("LOAD")) {
+                // LOAD komutları için özel işleme
+                if (command.size() > 1) {
+                    // Geçerli LOAD komutu (parametrelerle birlikte)
+                    String result = processor.processCommand(command);
+                    if (result != null) {
+                        System.out.println(result);
+                    }
+                }
+            }
+            // Diğer tüm komutlar için standart işleme
+            else {
+                String result = processor.processCommand(command);
+                if (result != null) {
+                    System.out.println(result);
+                }
             }
         }
     }
-    public List<String> tokenizeCommand(String input) {
-        List<String> parts = new ArrayList<>();
-        for (String tok : input.trim().split("\\s+")) {
-            if (!tok.isEmpty()) parts.add(tok);
+
+    // Normal komutlar için tokenize metodu
+    private List<String> tokenizeCommand(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return new ArrayList<>();
         }
-        return parts;
+
+        List<String> tokens = new ArrayList<>();
+        for (String tok : input.trim().split("\\s+")) {
+            if (!tok.isEmpty()) tokens.add(tok);
+        }
+        return tokens;
+    }
+
+    // TRANSITIONS komutu için özel tokenize metodu
+    private List<String> tokenizeTransitionCommand(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> tokens = new ArrayList<>();
+        String[] parts = input.trim().split("\\s+");
+
+        if (parts.length > 0) {
+            tokens.add(parts[0]); // TRANSITIONS komutunu ekle
+
+            // Tüm geçişleri virgülle ayrılmış kabul et
+            StringBuilder transitions = new StringBuilder();
+            for (int i = 1; i < parts.length; i++) {
+                transitions.append(parts[i]).append(" ");
+            }
+
+            // Virgülle ayrılmış geçişleri işle
+            String transitionsStr = transitions.toString().trim();
+            if (!transitionsStr.isEmpty()) {
+                tokens.add(transitionsStr); // Transitions parametresini tek parça olarak ekle
+            }
+        }
+
+        return tokens;
     }
 
     void handleExitCommand() {
@@ -951,42 +1085,49 @@ class CommandProcessor {
 
         try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
             String line;
-            StringBuilder buf = new StringBuilder();
             int lineNumber = 0;
+            StringBuilder multiLineCommand = new StringBuilder();
+            boolean inMultilineCommand = false;
 
             while ((line = file.readLine()) != null) {
                 lineNumber++;
-                buf.append(line).append(" ");
+                line = line.trim();
 
-                if (line.contains(";")) {
-                    String fullLine = buf.toString().trim();
-                    int semicolonIndex = fullLine.indexOf(";");
-                    String command = fullLine.substring(0, semicolonIndex).trim();
-                    buf.setLength(0); // temizle
-
-                    System.out.println(command + ";");
-
-                    List<String> cmdTokens = tokenizeCommand(command);
-                    if (!cmdTokens.isEmpty()) {
-                        String cmd = cmdTokens.get(0).toUpperCase();
-                        if (!cmd.equalsIgnoreCase("LOAD")) {
-                            try {
-                                String result = processCommand(cmdTokens);
-                                if (result != null) System.out.println(result);
-                            } catch (Exception e) {
-                                errorMessages.add("Line " + lineNumber + ": " + e.getMessage());
-                            }
-                        }
-                    }
+                // Boş satırları atla
+                if (line.isEmpty()) {
+                    continue;
                 }
+
+                // Çok satırlı komut işleme
+                if (inMultilineCommand) {
+                    multiLineCommand.append(" ").append(line);
+                    if (line.contains(";")) {
+                        inMultilineCommand = false;
+                        processFileCommand(multiLineCommand.toString(), lineNumber, errorMessages);
+                        multiLineCommand.setLength(0);
+                    }
+                    continue;
+                }
+
+                // Noktalı virgül içermeyen satırları çok satırlı komut başlangıcı olarak işle
+                if (!line.contains(";")) {
+                    inMultilineCommand = true;
+                    multiLineCommand.append(line);
+                    continue;
+                }
+
+                // Normal komut işleme (satırda noktalı virgül var)
+                processFileCommand(line, lineNumber, errorMessages);
             }
 
-            // Dosya bittiğinde hataları yazdır
-            if (!errorMessages.isEmpty()) {
-                System.out.println("\nERROR SUMMARY:");
-                for (String msg : errorMessages) {
-                    System.out.println(msg);
-                }
+            // Dosya bitti ama hala çok satırlı komut varsa
+            if (inMultilineCommand && multiLineCommand.length() > 0) {
+                String errorMsg = "Line " + lineNumber + ": unclosed command, semicolon missing";
+                System.out.println(errorMsg);
+                errorMessages.add(errorMsg);
+                // Yine de komutu işlemeye çalış
+                multiLineCommand.append(";"); // Eksik noktalı virgülü ekle
+                processFileCommand(multiLineCommand.toString(), lineNumber, errorMessages);
             }
 
         } catch (IOException e) {
@@ -994,14 +1135,162 @@ class CommandProcessor {
         }
     }
 
+    // Dosyadan okunan bir komut satırını işleyen yardımcı metot
+    private void processFileCommand(String commandLine, int lineNumber, List<String> errorMessages) {
+        // Geçerli komut anahtar kelimelerini belirle (büyük/küçük harf duyarsız)
+        Set<String> commandKeywords = new HashSet<>(Arrays.asList(
+                "SYMBOLS", "STATES", "INITIAL-STATE", "FINAL-STATES", "TRANSITIONS",
+                "PRINT", "COMPILE", "LOAD", "EXECUTE", "CLEAR", "LOG", "EXIT"
+        ));
 
-    private List<String> tokenizeCommand(String input) {
-        List<String> parts = new ArrayList<>();
-        for (String tok : input.trim().split("\\s+")) {
-            if (!tok.isEmpty()) parts.add(tok);
+        // Komutları ayrıştır
+        List<String> commands = splitIntoSeparateCommands(commandLine, commandKeywords);
+
+        // Her komutu ayrı ayrı işle
+        for (String command : commands) {
+            command = command.trim();
+            if (command.isEmpty()) continue;
+
+            boolean hasValidSemicolon = command.endsWith(";");
+            String commandWithoutSemi = hasValidSemicolon ?
+                    command.substring(0, command.length() - 1).trim() : command.trim();
+
+            System.out.println(command); // Sadece komutu yazdır
+
+            if (!hasValidSemicolon) {
+                String errorMsg = "Line " + lineNumber + ": semicolon missing in command-->" + command;
+                System.out.println(errorMsg);
+                errorMessages.add(errorMsg);
+            }
+
+            // Boş komut kontrolü
+            if (commandWithoutSemi.isEmpty()) continue;
+
+            try {
+                List<String> tokens = tokenizeCommand(commandWithoutSemi);
+                if (tokens.isEmpty()) continue;
+
+                String cmdType = tokens.get(0).toUpperCase();
+
+                // TRANSITIONS komutu için özel işleme
+                if (cmdType.equals("TRANSITIONS")) {
+                    List<String> transitionTokens = tokenizeTransitionCommand(commandWithoutSemi);
+                    String result = processCommand(transitionTokens);
+                    if (result != null) System.out.println(result); // Sonucu doğrudan yazdır
+                }
+                // LOAD komutları için nested kontrolü
+                if (cmdType.equals("LOAD")) {
+                    // LOAD komutları için özel işleme
+                    if (tokens.size() > 1) {
+                        // Geçerli LOAD komutu (parametrelerle birlikte)
+                        String result = processCommand(tokens);
+                        if (result != null) System.out.println(result);
+                    }
+                } else {
+                    // LOAD dışındaki tüm komutlar için standart işleme
+                    String result = processCommand(tokens);
+                    if (result != null) System.out.println(result);
+                }
+            } catch (Exception e) {
+                String errorMsg = "Line " + lineNumber + ": " + e.getMessage();
+                System.out.println(errorMsg);
+                errorMessages.add(errorMsg);
+            }
         }
-        return parts;
     }
+
+    // Bir satırı ayrı komutlara bölen yardımcı metot
+    private List<String> splitIntoSeparateCommands(String line, Set<String> commandKeywords) {
+        List<String> commands = new ArrayList<>();
+        StringBuilder currentCommand = new StringBuilder();
+        String[] tokens = line.split("\\s+");
+        boolean inCommand = false;
+
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i].trim();
+            if (token.isEmpty()) continue;
+
+            // Noktalı virgül içeren token kontrolü
+            if (token.contains(";")) {
+                // Noktalı virgülü ayır
+                int semicolonIndex = token.indexOf(';');
+                if (semicolonIndex > 0) {
+                    // Noktalı virgülden önceki kısmı mevcut komuta ekle
+                    currentCommand.append(" ").append(token.substring(0, semicolonIndex));
+                }
+
+                // Mevcut komutu tamamla
+                commands.add(currentCommand.toString().trim() + ";");
+                currentCommand = new StringBuilder();
+                inCommand = false;
+
+                // Noktalı virgülden sonraki kısmı kontrol et
+                if (semicolonIndex < token.length() - 1) {
+                    String remainder = token.substring(semicolonIndex + 1).trim();
+                    if (!remainder.isEmpty()) {
+                        currentCommand.append(remainder);
+                        inCommand = true;
+                    }
+                }
+            }
+            // Yeni bir komut başlangıcı mı kontrol et
+            else if (commandKeywords.contains(token.toUpperCase()) && inCommand && !currentCommand.toString().trim().isEmpty()) {
+                // Mevcut komutu noktalı virgül olmadan tamamla
+                commands.add(currentCommand.toString().trim());
+                currentCommand = new StringBuilder(token);
+            }
+            // Normal token, mevcut komuta ekle
+            else {
+                if (inCommand) {
+                    currentCommand.append(" ");
+                } else {
+                    inCommand = true;
+                }
+                currentCommand.append(token);
+            }
+        }
+
+        // Kalan komut varsa ekle
+        if (inCommand && !currentCommand.toString().trim().isEmpty()) {
+            commands.add(currentCommand.toString().trim());
+        }
+
+        return commands;
+    }
+
+    // TRANSITIONS komutu için özel tokenize metodu
+    private List<String> tokenizeTransitionCommand(String input) {
+        List<String> tokens = new ArrayList<>();
+        String[] parts = input.trim().split("\\s+");
+
+        if (parts.length > 0) {
+            tokens.add(parts[0]); // TRANSITIONS komutunu ekle
+
+            // Tüm geçişleri virgülle ayrılmış kabul et
+            StringBuilder transitions = new StringBuilder();
+            for (int i = 1; i < parts.length; i++) {
+                transitions.append(parts[i]).append(" ");
+            }
+
+            // Virgülle ayrılmış geçişleri işle
+            String transitionsStr = transitions.toString().trim();
+            if (!transitionsStr.isEmpty()) {
+                tokens.add(transitionsStr); // Transitions parametresini tek parça olarak ekle
+            }
+        }
+
+        return tokens;
+    }
+
+    // Normal komutlar için tokenize metodu
+    private List<String> tokenizeCommand(String input) {
+        List<String> tokens = new ArrayList<>();
+        for (String tok : input.trim().split("\\s+")) {
+            if (!tok.isEmpty()) tokens.add(tok);
+        }
+        return tokens;
+    }
+
    public String processCommand(List<String> tokens) throws InvalidCommandException {
         if (tokens.isEmpty()) {
             throw new InvalidCommandException("No command provided");
