@@ -222,7 +222,10 @@ interface InterFSM {
 
          Pair<String, String> key = new Pair<>(symbol, fromState);
          if (transitions.containsKey(key)) {
-             System.out.println("Warning: transition already exists for <" + symbol + "," + fromState + ">. It will be overridden.");
+             String existingNextState = transitions.get(key);
+             if (!existingNextState.equals(toState)) {
+                 System.out.println("Warning: Transition <" + symbol + "," + fromState + "> overridden (" + existingNextState + " → " + toState + ")");
+             }
          }
 
          transitions.put(key, toState);
