@@ -1382,6 +1382,7 @@ class CommandProcessor {
                         throw new InvalidCommandException("LOAD requires filename");
                     }
                     String fn = tokens.get(1);
+                    try {
                     if (fn.toLowerCase().endsWith(".fs")) {
                         FSM loaded = serializer.deserializeFSM(fn);
                         this.fsm = loaded;
@@ -1390,6 +1391,10 @@ class CommandProcessor {
                     } else {
                         // Dosyadan okuma ve komutları işleme
                         handleLoadFromTextFile(fn);
+                    }
+                    } catch (FileOperationException | InvalidFileNameException | InvalidFilePathException | InvalidFileFormatException e){
+                        result = "Error: " + e.getMessage();
+
                     }
                     break;
 
