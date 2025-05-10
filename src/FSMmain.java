@@ -1372,8 +1372,8 @@ class CommandProcessor {
                     try {
                     serializer.serializeFSM(fsm, tokens.get(1));
                     result= "Compile successful";
-                    } catch(Exception e){
-                        result = "Error ="+e.getMessage();
+                    } catch (Exception e){
+                        result = "Error ="+ e.getMessage();
                     }
                     break;
 
