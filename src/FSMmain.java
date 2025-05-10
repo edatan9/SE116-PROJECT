@@ -453,6 +453,30 @@ class FSMCommandHandler {
             }
         }
     }
+    public void handleStatesListCommand() {
+        Set<String> states = fsm.getStates();
+        String initial = fsm.getCurrentState();
+        Set<String> finals = fsm.getFinalStates();
+
+        List<String> labeledStates = new ArrayList<>();
+        for (String state : states) {
+            boolean isInitial = state.equals(initial);
+            boolean isFinal = finals.contains(state);
+
+            if (isInitial && isFinal) {
+                labeledStates.add(state + " (initial, final)");
+            } else if (isInitial) {
+                labeledStates.add(state + " (initial)");
+            } else if (isFinal) {
+                labeledStates.add(state + " (final)");
+            } else {
+                labeledStates.add(state);
+            }
+        }
+
+        System.out.println("LABELED STATES: " + labeledStates);
+    }
+
 
     public void handlePrintCommand(String filename) {
         System.out.println("SYMBOLS: " + fsm.getSymbols());
@@ -859,10 +883,13 @@ class CommandInterpreter {
         System.out.print("? ");
     }
     public void startREPL() throws InvalidCommandException {
+
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         StringBuilder buffer = new StringBuilder();
+
         int lineNumber = 0;
         printPrompt();
+
         try {
             String line;
             while (running && (line = reader.readLine()) != null) {
@@ -1332,7 +1359,8 @@ class CommandProcessor {
 
                 case "STATES":
                     if (tokens.size() == 1) {
-                        return handler.getFSM().getStates().toString();
+                        handler.handleStatesListCommand();
+                        return null;
                     } else {
                         String[] sts = tokens.subList(1, tokens.size())
                                 .toArray(new String[0]);
