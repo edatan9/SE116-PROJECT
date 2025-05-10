@@ -1369,8 +1369,12 @@ class CommandProcessor {
                     if (tokens.size() != 2) {
                         throw new InvalidCommandException("COMPILE requires filename");
                     }
+                    try {
                     serializer.serializeFSM(fsm, tokens.get(1));
                     result= "Compile successful";
+                    } catch(Exception e){
+                        result = "Error ="+e.getMessage();
+                    }
                     break;
 
                 case "LOAD":

@@ -1,0 +1,26 @@
+LOG base4mod3errors.log; 
+SYMBOLS 0 1 % 33; a fsm that accepts numbers in base four that when divided by three remainder is two
+SYMBOL; print the symbol list
+INITIAL-STATE Q0 ; last digit indicates remainder so far
+FINAL-STATES Q2; 
+STATES; print the current list of states
+STATES Q1 
+TRANSITIONS 0 Q0 q0, 0 Q1 Q1, 0 Q2 q2;
+TRANSITIONS  1 Q0 q1, 1 Q1 Q2, 1 Q2 q0,
+                          2 Q0 q2, 1 Q1 Q4, 2 Q2 q1,
+                          3 Q0 q0, 3 Q1 Q1, 3 Q2 q 2; multiply currentstate remainder by 4, add new symbol, mod 3.
+PRINT; 
+EXECUTE 123; expected result is Q0 Q1 Q0 Q0 NO
+COMPILE base4mod3.fs;
+CLEAR;
+PRINT; 
+LOAD base4mod3.fs
+EXECUTE 123;
+
+;Line 2: % is not allowed, not alphanumeric. 33 is not allowed as a symbol, length must be 1.
+;Line 3: invalid command SYMBOL
+;Lýne 4: warning Q0 was not declared as a state
+;Line 8: warning “0” is both a symbol and a state, states Q0, Q1, Q2, 0 declared multiple times, 
+;Line 8: error: unexpected comma character
+;Line 10: warning multiple transitions for symbol 1 and state Q1, error: Q4 is not a state
+;Line 18: semicolon expected

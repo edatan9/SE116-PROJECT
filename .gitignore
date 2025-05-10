@@ -1,0 +1,7 @@
+*.class
+*.log
+*.fs
+target/
+.idea/
+*.iml
+
