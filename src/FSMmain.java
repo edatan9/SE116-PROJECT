@@ -1041,11 +1041,14 @@ class CommandInterpreter {
         running = false;
     }
     void handleLoadCommand(String filename) {
+        int lineNumber = 0;
+
         try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
             String line;
             StringBuilder buf = new StringBuilder();
 
             while ((line = file.readLine()) != null) {
+                lineNumber++;
                 buf.append(line).append(" ");
 
                 if (line.contains(";")) {
@@ -1074,6 +1077,9 @@ class CommandInterpreter {
                             }
                         }
                     }
+                }
+                else {
+                    System.out.println("Line " + lineNumber + ": semicolon expected");
                 }
             }
         } catch (IOException e) {
