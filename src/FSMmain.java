@@ -1362,7 +1362,11 @@ class CommandProcessor {
                     if (tokens.size() == 1) {
                         handler.handlePrintCommand(null);
                     } else {
+                        try  {
                         fileManager.writeToFile(tokens.get(1));
+                        }  catch(FileOperationException e){
+                          result = "Error:"+ e.getMessage();
+                        }
                     }break;
 
                 case "COMPILE":
