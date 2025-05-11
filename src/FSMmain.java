@@ -882,65 +882,52 @@ class CommandInterpreter {
     private void printPrompt() {
         System.out.print("? ");
     }
-    public void startREPL() throws InvalidCommandException {
-
+    public void startREPL() {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         StringBuilder buffer = new StringBuilder();
-
         int lineNumber = 0;
         printPrompt();
 
         try {
             String line;
             while (running && (line = reader.readLine()) != null) {
-                lineNumber++;  // Her satır için numarayı artır
+                lineNumber++;
+                line = line.trim();
 
-                if (line.trim().isEmpty()) {
+                if (line.isEmpty()) {
                     printPrompt();
                     continue;
                 }
 
-                // Satırda noktalı virgül var mı kontrol et
                 int idx = line.indexOf(';');
-
                 if (idx >= 0) {
-                    // Noktalı virgüle kadar olan kısmı tampona ekle
                     buffer.append(line, 0, idx);
                     String command = buffer.toString().trim();
-
-                    // Komutu işle
-                    if (!command.isEmpty()) {
-                        processLine(command);
-                    }
-
-                    // Tamponu temizle
                     buffer.setLength(0);
-
-                    // Noktalı virgülden sonraki kısmı kontrol et, varsa tampona ekle
-                    if (idx < line.length() - 1) {
-                        buffer.append(line.substring(idx + 1));
+                    if (!command.isEmpty()) {
+                        try {
+                            processLine(command);
+                        } catch (InvalidCommandException e) {
+                            System.err.println("Error: " + e.getMessage());
+                        }
                     }
 
                     if (running) printPrompt();
                 } else {
-                    // Noktalı virgül yok, hata mesajı göster
                     System.out.println("Line " + lineNumber + ": semicolon expected");
-
-                    // Girdiyi tampona ekle
                     buffer.append(line).append(" ");
-
                     if (running) printPrompt();
                 }
             }
         } catch (IOException e) {
-            throw new InvalidCommandException("I/O error: " + e.getMessage());
+            System.err.println("I/O error: " + e.getMessage());
         } finally {
-            // Uygulama sonlanırken Logger'ı kapat
             if (Logger.isLoggingEnabled()) {
                 Logger.stopLogging();
             }
         }
     }
+
     public void processLine(String line) throws InvalidCommandException {
         if (line == null || line.isEmpty()) return;
 
@@ -1506,18 +1493,15 @@ class GitVersion {
 
             CommandInterpreter interpreter = new CommandInterpreter();
 
-            try {
-                // FR15: if a filename was passed on the command line, load it first
-                if (args.length > 0) {
-                    System.out.println("Loading commands from file: " + args[0]);
-                    interpreter.handleLoadCommand(args[0]);
-                }
-                // then start interactive mode
-                interpreter.startREPL();
+            // FR15: if a filename was passed on the command line, load it first
+            if (args.length > 0) {
+                System.out.println("Loading commands from file: " + args[0]);
+                interpreter.handleLoadCommand(args[0]);
+            }
 
-            } catch (InvalidCommandException e) {
-                System.err.println("Error: " + e.getMessage());
-
+            // Start interactive mode
+            interpreter.startREPL(); // Artık InvalidCommandException fırlatmıyor
         }
     }
-}
+
+

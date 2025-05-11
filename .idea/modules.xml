@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/fsm-designer.iml" filepath="$PROJECT_DIR$/fsm-designer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SE116-PROJECT.iml" filepath="$PROJECT_DIR$/SE116-PROJECT.iml" />
     </modules>
   </component>
 </project>
